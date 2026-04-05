@@ -1,0 +1,80 @@
+create or replace package k_lista is
+  
+  subtype typ_separador is varchar2(3) not null;
+  subtype typ_valor     is varchar2(4000);
+  subtype typ_string    is varchar2(32767);  
+  type    typ_lista     is table of typ_valor;
+  type    typ_lista_i   is table of typ_valor index by pls_integer;
+  type    typ_lista_v   is table of typ_valor index by varchar2(45);
+  
+  cns_ds_sep constant typ_separador := ';';
+  
+  procedure p_criar_lista(prm_ds_string    in  typ_string,
+                          prm_vt_lista     out nocopy typ_lista,
+                          prm_ds_separador in  typ_separador default cns_ds_sep,
+                          prm_vf_trim      in  boolean       default true);
+                          
+  procedure p_criar_lista_i(prm_ds_string    in  typ_string,
+                            prm_vt_lista     out typ_lista,
+                            prm_ds_separador in  typ_separador default cns_ds_sep);
+  
+  procedure p_criar_lista_v(prm_ds_string    in  typ_string,
+                            prm_vt_lista     out typ_lista,
+                            prm_ds_separador in  typ_separador default cns_ds_sep);
+
+end k_lista;
+/
+create or replace package body k_lista is
+
+  procedure p_criar_lista(prm_ds_string    in  typ_string,
+                          prm_vt_lista     out nocopy typ_lista,
+                          prm_ds_separador in  typ_separador default cns_ds_sep,
+                          prm_vf_trim      in  boolean       default true)
+    is
+      aux_ds_substr typ_string;
+      aux_ds_valor  typ_valor;
+      aux_nr_pos    pls_integer := 1;
+      aux_nr_idx    pls_integer;
+    begin
+      aux_ds_substr := prm_ds_string;
+      
+      if prm_vf_trim then
+         aux_ds_substr := trim(both prm_ds_separador from prm_ds_string);
+      end if;
+      
+      aux_nr_idx    := nvl(instr(aux_ds_substr, prm_ds_separador), 0);
+      prm_vt_lista  := typ_lista();
+      
+      while aux_ds_substr is not null and aux_nr_idx > 0 loop
+        aux_ds_valor  := substr(aux_ds_substr, 1, aux_nr_idx - 1);
+        aux_ds_substr := substr(aux_ds_substr, aux_nr_idx + 1);
+        prm_vt_lista.extend;
+        prm_vt_lista(aux_nr_pos) := aux_ds_valor;
+        aux_nr_pos := aux_nr_pos + 1;
+        aux_nr_idx := nvl(instr(aux_ds_substr, prm_ds_separador), 0);
+      end loop;
+      
+      aux_ds_valor := aux_ds_substr;
+      prm_vt_lista.extend;
+      prm_vt_lista(aux_nr_pos) := aux_ds_valor;
+      
+    end p_criar_lista;
+  
+  procedure p_criar_lista_i(prm_ds_string    in  typ_string,
+                            prm_vt_lista     out typ_lista,
+                            prm_ds_separador in  typ_separador default cns_ds_sep)
+    is
+    begin
+      null;
+    end p_criar_lista_i;
+  
+  procedure p_criar_lista_v(prm_ds_string    in  typ_string,
+                            prm_vt_lista     out typ_lista,
+                            prm_ds_separador in  typ_separador default cns_ds_sep)
+    is
+    begin
+      null;
+    end p_criar_lista_v;
+
+end k_lista;
+/

@@ -1,0 +1,387 @@
+create or replace package k_processo 
+is
+  e_validacao exception;
+  subtype typ_ds_erro is varchar2(4000);
+  cns_ds_sep constant k_lista.typ_separador := '&';
+  
+  -- Salva a geração do processo
+  procedure p_salvar(prm_cd_prcsso        in  geracao_prcsso.cd_prcsso%type,
+                     prm_dt_geracao       in  geracao_prcsso.dt_geracao%type,
+                     prm_cd_usuario       in  geracao_prcsso.cd_usuario%type,
+                     prm_dm_geracao       in  geracao_prcsso.dm_geracao%type,
+                     prm_cd_prcsso_origem in  geracao_prcsso.cd_prcsso_origem%type,
+                     prm_cd_geracao       out geracao_prcsso.nr_sequencia%type);
+  
+  -- Salva o parâmetro da geração
+  procedure p_salvar_param(prm_cd_geracao in geracao_prcsso_prm.nr_seq_geracao%type,
+                           prm_nr_seq_prm in geracao_prcsso_prm.nr_seq_param%type,
+                           prm_ds_valor   in geracao_prcsso_prm.ds_valor%type);
+  
+  -- Realiza o processamento
+  procedure p_processar(prm_cd_geracao in geracao_prcsso.nr_sequencia%type,
+                        prm_dm_modo    in char default 'I');
+  
+  -- Busca o valor do parâmetro
+  procedure p_buscar_prm(prm_cd_geracao   in  geracao_prcsso_prm.nr_seq_geracao%type,
+                         prm_nr_sequencia in  geracao_prcsso_prm.nr_seq_param%type,
+                         prm_ds_valor     out geracao_prcsso_prm.ds_valor%type);
+  
+  -- Salva o erro ocorrido no processo
+  procedure p_salvar_erro(prm_cd_geracao in geracao_prcsso_prm.nr_seq_geracao%type,
+                          prm_ds_erro    in geracao_prcsso_err.ds_erro%type);
+  
+  -- Valida o processo antes do processamento
+  procedure p_validar(prm_cd_geracao in  geracao_prcsso_prm.nr_seq_geracao%type,
+                      prm_ds_erro    out typ_ds_erro);
+  
+  -- Busca o processo ativo
+  function f_buscar_ativo return geracao_prcsso.nr_sequencia%type;
+  
+  -- Processa imediatamente, a ser utilizado pela rotinas pl/sql
+  procedure p_processar_agora(prm_cd_prcsso     in  geracao_prcsso.cd_prcsso%type,
+                              prm_cd_prcsso_ori in  geracao_prcsso.cd_prcsso_origem%type,
+                              prm_ds_params     in  varchar2,
+                              prm_cd_geracao    out geracao_prcsso.nr_sequencia%type,
+                              prm_vf_erro       out boolean);
+  
+  procedure p_buscar_select(prm_cd_geracao in  geracao_prcsso.nr_sequencia%type,
+                            prm_ds_select  out processo.ds_select%type);
+                            
+  procedure p_salvar_arquivo(prm_cd_geracao    geracao_prcsso_arq.nr_seq_prcsso%type,
+                             prm_cd_dir_oracle geracao_prcsso_arq.cd_dir_oracle%type,
+                             prm_ds_local      geracao_prcsso_arq.ds_local%type,
+                             prm_ds_nome       geracao_prcsso_arq.ds_nome%type,
+                             prm_ds_conteudo   geracao_prcsso_arq.ds_conteudo%type,
+                             prm_cd_seq        out geracao_prcsso_arq.nr_sequencia%type);
+                             
+  procedure p_salvar_arquivo(prm_cd_geracao geracao_prcsso_arq.nr_seq_prcsso%type,
+                             prm_cd_arquivo geracao_prcsso_arq.cd_arquivo%type);
+                             
+
+end k_processo;
+/
+create or replace package body k_processo 
+is
+  aux_cd_prcsso geracao_prcsso.nr_sequencia%type;
+  
+  procedure p_definir_prcsso(prm_cd_geracao in geracao_prcsso.nr_sequencia%type)
+    is
+    begin
+      aux_cd_prcsso := prm_cd_geracao;
+    end p_definir_prcsso;
+    
+  procedure p_inicio
+    is
+    begin
+      update geracao_prcsso gp
+         set gp.dt_inicio    = current_timestamp(6)
+       where gp.nr_sequencia = f_buscar_ativo;
+    end p_inicio;
+  
+  procedure p_termino
+    is
+    begin
+      update geracao_prcsso gp
+         set gp.dt_termino   = current_timestamp(6),
+             gp.fg_erro      = (select case count(1)
+                                         when 0 then 'N'
+                                         else 'S'
+                                       end
+                                  from geracao_prcsso_err gpe
+                                 where gpe.nr_seq_geracao = gp.nr_sequencia)
+       where gp.nr_sequencia = f_buscar_ativo;
+    end p_termino;
+  
+  procedure p_salvar(prm_cd_prcsso        in  geracao_prcsso.cd_prcsso%type,
+                     prm_dt_geracao       in  geracao_prcsso.dt_geracao%type,
+                     prm_cd_usuario       in  geracao_prcsso.cd_usuario%type,
+                     prm_dm_geracao       in  geracao_prcsso.dm_geracao%type,
+                     prm_cd_prcsso_origem in  geracao_prcsso.cd_prcsso_origem%type,
+                     prm_cd_geracao       out geracao_prcsso.nr_sequencia%type)
+    is
+      aux_rg_geracao geracao_prcsso%rowtype;
+    begin
+      aux_rg_geracao.nr_sequencia     := s_grc_prcsso.nextval;
+      aux_rg_geracao.cd_prcsso        := prm_cd_prcsso;
+      aux_rg_geracao.dt_geracao       := prm_dt_geracao;
+      aux_rg_geracao.cd_usuario       := prm_cd_usuario;
+      aux_rg_geracao.dm_geracao       := prm_dm_geracao;
+      aux_rg_geracao.cd_prcsso_origem := prm_cd_prcsso_origem;
+      aux_rg_geracao.dt_criacao       := sysdate;
+      
+      insert 
+        into geracao_prcsso
+      values aux_rg_geracao;
+      
+      prm_cd_geracao := aux_rg_geracao.nr_sequencia;
+      
+    end p_salvar;
+                     
+  procedure p_salvar_param(prm_cd_geracao in geracao_prcsso_prm.nr_seq_geracao%type,
+                           prm_nr_seq_prm in geracao_prcsso_prm.nr_seq_param%type,
+                           prm_ds_valor   in geracao_prcsso_prm.ds_valor%type)
+    is
+      aux_rg_grcprcprm geracao_prcsso_prm%rowtype;
+    begin
+      select gp.cd_prcsso
+        into aux_rg_grcprcprm.cd_prcsso
+        from geracao_prcsso gp
+       where gp.nr_sequencia = prm_cd_geracao;
+      
+      aux_rg_grcprcprm.nr_seq_geracao := prm_cd_geracao;
+      aux_rg_grcprcprm.nr_seq_param   := prm_nr_seq_prm;
+      aux_rg_grcprcprm.ds_valor       := prm_ds_valor;
+      
+      insert
+        into geracao_prcsso_prm
+      values aux_rg_grcprcprm;
+      
+    end p_salvar_param;
+  
+  procedure p_processar(prm_cd_geracao in geracao_prcsso.nr_sequencia%type,
+                        prm_dm_modo    in char default 'I')
+    is
+      aux_ds_sql    varchar2(4000);
+      aux_cd_rotina processo.cd_rotina%type;
+      aux_ds_job    varchar(26);
+      aux_dt_prcsso date;
+    begin
+      select p.cd_rotina
+        into aux_cd_rotina
+        from processo       p,
+             geracao_prcsso gp
+       where gp.cd_prcsso    = p.cd_prcsso
+         and gp.nr_sequencia = prm_cd_geracao;
+      
+      if prm_dm_modo = 'I' then
+        p_definir_prcsso(prm_cd_geracao);
+        p_inicio;
+        begin
+          aux_ds_sql := 'begin '||aux_cd_rotina||'(:1); end;';
+          execute immediate aux_ds_sql 
+            using prm_cd_geracao;
+        exception
+          when others then
+            p_salvar_erro(prm_cd_geracao, substr(dbms_utility.format_error_stack, 1, 4000));
+        end;
+        p_definir_prcsso(prm_cd_geracao);
+        p_termino;
+      else
+        aux_ds_job := 'j_prc_'||prm_cd_geracao;
+        
+        select gp.dt_geracao
+          into aux_dt_prcsso
+          from geracao_prcsso gp
+         where gp.nr_sequencia = prm_cd_geracao;
+          
+        dbms_scheduler.create_job(job_name            => aux_ds_job,
+                                  job_type            => 'STORED_PROCEDURE',
+                                  job_action          => 'k_processo.p_processar',
+                                  number_of_arguments => 2,
+                                  start_date          => aux_dt_prcsso,
+                                  enabled             => false,
+                                  auto_drop           => true);
+        dbms_scheduler.set_job_argument_value(job_name          => aux_ds_job,
+                                              argument_position => 1,
+                                              argument_value    => prm_cd_geracao);
+        dbms_scheduler.set_job_argument_value(job_name          => aux_ds_job,
+                                              argument_position => 2,
+                                              argument_value    => 'I');
+
+        dbms_scheduler.enable(aux_ds_job);
+        
+        update geracao_prcsso gp
+           set gp.cd_job = aux_ds_job
+         where gp.nr_sequencia = prm_cd_geracao;
+        
+      end if;
+      
+    end p_processar;
+  
+  procedure p_buscar_prm(prm_cd_geracao   in  geracao_prcsso_prm.nr_seq_geracao%type,
+                         prm_nr_sequencia in  geracao_prcsso_prm.nr_seq_param%type,
+                         prm_ds_valor     out geracao_prcsso_prm.ds_valor%type)
+    is
+    begin
+      select ds_valor
+        into prm_ds_valor
+        from geracao_prcsso_prm gpp,
+             geracao_prcsso     gp
+       where gpp.nr_seq_geracao = gp.nr_sequencia
+         and gpp.cd_prcsso      = gp.cd_prcsso
+         and gpp.nr_seq_geracao = prm_cd_geracao
+         and gpp.nr_seq_param   = prm_nr_sequencia;
+    exception
+      when no_data_found then
+        select pp.ds_val_padrao
+          into prm_ds_valor
+          from processo_param pp,
+               geracao_prcsso gp
+         where pp.cd_prcsso    = gp.cd_prcsso
+           and gp.nr_sequencia = prm_cd_geracao
+           and pp.nr_sequencia = prm_nr_sequencia;
+      when others then
+        raise;
+    end;
+    
+  procedure p_salvar_erro(prm_cd_geracao in geracao_prcsso_prm.nr_seq_geracao%type,
+                          prm_ds_erro    in geracao_prcsso_err.ds_erro%type)
+    is
+      pragma autonomous_transaction;
+      aux_rg_erro geracao_prcsso_err%rowtype;
+    begin
+      aux_rg_erro.nr_sequencia   := s_grc_prcsso_err.nextval;
+      aux_rg_erro.nr_seq_geracao := prm_cd_geracao;
+      aux_rg_erro.dt_erro        := sysdate;
+      aux_rg_erro.ds_erro        := substr(prm_ds_erro, 1, 4000);
+      aux_rg_erro.cd_usuario     := f_buscar_usuario_ativo;
+      
+      insert 
+        into geracao_prcsso_err
+      values aux_rg_erro;
+      
+      commit;
+    end p_salvar_erro;
+  
+  procedure p_validar(prm_cd_geracao in  geracao_prcsso_prm.nr_seq_geracao%type,
+                      prm_ds_erro    out typ_ds_erro)
+    is
+      cursor cur_params is
+      select pp.nr_sequencia,
+             pp.fg_obrigatorio,
+             pp.ds_label
+        from geracao_prcsso gp,
+             processo_param pp
+       where pp.cd_prcsso    = gp.cd_prcsso
+         and gp.nr_sequencia = prm_cd_geracao;
+         
+      aux_ds_valor geracao_prcsso_prm.ds_valor%type;
+    begin
+      for reg_param in cur_params loop
+        p_buscar_prm(prm_cd_geracao, reg_param.nr_sequencia, aux_ds_valor);
+        
+        if aux_ds_valor is null and reg_param.fg_obrigatorio = 'S' then
+          prm_ds_erro := 'O parâmetro '||reg_param.ds_label||' é obrigatório.'||chr(13);
+        end if;
+      end loop;
+      
+    end p_validar;
+  
+  function f_buscar_ativo 
+    return geracao_prcsso.nr_sequencia%type
+    is
+    begin
+      return aux_cd_prcsso;
+    end;
+    
+  procedure p_processar_agora(prm_cd_prcsso     in  geracao_prcsso.cd_prcsso%type,
+                              prm_cd_prcsso_ori in  geracao_prcsso.cd_prcsso_origem%type,
+                              prm_ds_params     in  varchar2,
+                              prm_cd_geracao    out geracao_prcsso.nr_sequencia%type,
+                              prm_vf_erro       out boolean)
+    is
+      pragma autonomous_transaction;
+      aux_vt_params k_lista.typ_lista;
+    begin
+      -- Cria a lista de parâmtros
+      k_lista.p_criar_lista(prm_ds_params, aux_vt_params, cns_ds_sep);
+      -- Cria a geração
+      p_salvar(prm_cd_prcsso        => prm_cd_prcsso,
+               prm_dt_geracao       => sysdate,
+               prm_cd_usuario       => f_buscar_usuario_ativo,
+               prm_dm_geracao       => 'I',
+               prm_cd_prcsso_origem => prm_cd_prcsso_ori,
+               prm_cd_geracao       => prm_cd_geracao);
+      
+      for aux_i in 1 .. aux_vt_params.count loop
+        -- Salva os parâmetros
+        p_salvar_param(prm_cd_geracao => prm_cd_geracao,
+                       prm_nr_seq_prm => aux_i,
+                       prm_ds_valor   => aux_vt_params(aux_i));
+      end loop;
+      
+      commit;
+      -- Processa a geração
+      p_processar(prm_cd_geracao);
+      commit;
+      -- Verifica erros
+      select case count(1)
+               when 0 then false
+               else true
+             end
+        into prm_vf_erro
+        from geracao_prcsso_err gpe
+       where gpe.nr_seq_geracao = prm_cd_geracao;
+      
+    end p_processar_agora;
+  
+  procedure p_buscar_select(prm_cd_geracao in  geracao_prcsso.nr_sequencia%type,
+                            prm_ds_select  out processo.ds_select%type)
+    is
+    begin
+      select p.ds_select
+        into prm_ds_select
+        from geracao_prcsso gp,
+             processo       p
+       where gp.cd_prcsso    = p.cd_prcsso
+         and gp.nr_sequencia = prm_cd_geracao;
+    end;
+  
+  procedure p_salvar_arquivo(prm_cd_geracao    geracao_prcsso_arq.nr_seq_prcsso%type,
+                             prm_cd_dir_oracle geracao_prcsso_arq.cd_dir_oracle%type,
+                             prm_ds_local      geracao_prcsso_arq.ds_local%type,
+                             prm_ds_nome       geracao_prcsso_arq.ds_nome%type,
+                             prm_ds_conteudo   geracao_prcsso_arq.ds_conteudo%type,
+                             prm_cd_seq        out geracao_prcsso_arq.nr_sequencia%type)
+  is
+  begin
+    insert
+      into geracao_prcsso_arq
+          (nr_seq_prcsso,
+           dt_geracao,
+           cd_dir_oracle,
+           ds_local,
+           ds_nome,
+           ds_conteudo)
+    values(prm_cd_geracao,
+           sysdate,
+           prm_cd_dir_oracle,
+           prm_ds_local,
+           prm_ds_nome,
+           prm_ds_conteudo)
+    returning nr_sequencia into prm_cd_seq;
+  end;
+  
+  procedure p_salvar_arquivo(prm_cd_geracao geracao_prcsso_arq.nr_seq_prcsso%type,
+                             prm_cd_arquivo geracao_prcsso_arq.cd_arquivo%type)
+    is
+      aux_cd_dir_oracle geracao_prcsso_arq.cd_dir_oracle%type;
+      aux_ds_local      geracao_prcsso_arq.ds_local%type;
+      aux_ds_nome       geracao_prcsso_arq.ds_nome%type;
+      aux_cd_seq        geracao_prcsso_arq.nr_sequencia%type;
+    begin
+      select a.ds_ora_dir,
+             a.ds_path,
+             a.ds_nome || '.' || a.ds_extencao
+        into aux_cd_dir_oracle,
+             aux_ds_local,
+             aux_ds_nome
+        from arquivo a
+       where a.cd_arquivo = prm_cd_arquivo;
+      
+      p_salvar_arquivo(prm_cd_geracao    => prm_cd_geracao,
+                       prm_cd_dir_oracle => aux_cd_dir_oracle,
+                       prm_ds_local      => aux_ds_local,
+                       prm_ds_nome       => aux_ds_nome,
+                       prm_ds_conteudo   => null,
+                       prm_cd_seq        => aux_cd_seq);
+      
+      update geracao_prcsso_arq gpa
+         set gpa.cd_arquivo = prm_cd_arquivo
+       where gpa.nr_sequencia = aux_cd_seq;
+      
+    end;
+  
+  
+end k_processo;
+/

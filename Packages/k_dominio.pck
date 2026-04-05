@@ -1,0 +1,191 @@
+create or replace package k_dominio is
+  
+  subtype typ_sql is varchar2(512);
+  
+  function f_mask(prm_cd_dominio in dominio_valor.cd_dominio%type,
+                  prm_ds_valor   in dominio_valor.ds_valor%type)
+    return dominio_valor.ds_mascara%type;
+  
+  function f_dm_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                      prm_cd_atributo in dominio_relacionamento.cd_atributo%type)
+    return dominio_relacionamento.cd_dominio%type;
+  
+  function f_mask_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                        prm_cd_atributo in dominio_relacionamento.cd_atributo%type,
+                        prm_ds_valor    in dominio_valor.ds_valor%type)
+    return dominio_valor.ds_mascara%type;
+  
+  function f_sql_dm(prm_cd_dominio in dominio.cd_dominio%type)
+    return typ_sql;
+  
+  function f_sql_dm_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                          prm_cd_atributo in dominio_relacionamento.cd_atributo%type)
+    return typ_sql;
+    
+  function f_val_padrao(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                        prm_cd_atributo in dominio_relacionamento.cd_atributo%type,
+                        prm_cd_dominio  in dominio.cd_dominio%type default null)
+    return dominio.ds_valor_padrao%type;
+  
+  procedure p_validar_valor(prm_cd_dominio dominio_valor.cd_dominio%type,
+                            prm_ds_valor   dominio_valor.ds_valor%type);
+
+end k_dominio;
+/
+create or replace package body k_dominio is
+
+  subtype typ_chave is varchar2(256);
+
+  type typ_vet_mask is table of dominio_valor.ds_mascara%type
+    index by typ_chave;
+  
+  type typ_vet_relac is table of dominio.cd_dominio%type
+    index by typ_chave;
+    
+  aux_vet_mask  typ_vet_mask  := typ_vet_mask();
+  aux_vet_relac typ_vet_relac := typ_vet_relac();
+  
+  procedure p_carregar_mask(prm_cd_dominio in dominio_valor.cd_dominio%type,
+                            prm_ds_valor   in dominio_valor.ds_valor%type)
+    is
+      aux_ds_chave typ_chave := prm_cd_dominio||'|'||prm_ds_valor;
+    begin
+      select dv.ds_mascara
+        into aux_vet_mask(aux_ds_chave)
+        from dominio_valor dv
+       where dv.cd_dominio = prm_cd_dominio
+         and dv.ds_valor   = prm_ds_valor;
+    end;
+  
+  procedure p_carregar_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                             prm_cd_atributo in dominio_relacionamento.cd_atributo%type)
+    is
+      aux_ds_chave typ_chave := upper(prm_cd_objeto||'|'||prm_cd_atributo);
+    begin
+      select dr.cd_dominio
+        into aux_vet_relac(aux_ds_chave)
+        from dominio_relacionamento dr
+       where upper(dr.cd_objeto)   = upper(prm_cd_objeto)
+         and upper(dr.cd_atributo) = upper(prm_cd_atributo);
+    end;
+
+  function f_mask(prm_cd_dominio in dominio_valor.cd_dominio%type,
+                  prm_ds_valor   in dominio_valor.ds_valor%type)
+    return dominio_valor.ds_mascara%type
+    is
+      aux_ds_chave typ_chave := prm_cd_dominio||'|'||prm_ds_valor;
+    begin
+      if not aux_vet_mask.exists(aux_ds_chave) then
+        p_carregar_mask(prm_cd_dominio => prm_cd_dominio,
+                        prm_ds_valor   => prm_ds_valor);
+      end if;
+      return aux_vet_mask(aux_ds_chave);
+    end;
+  
+  function f_dm_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                      prm_cd_atributo in dominio_relacionamento.cd_atributo%type)
+    return dominio_relacionamento.cd_dominio%type
+    is
+      aux_ds_chave typ_chave := upper(prm_cd_objeto||'|'||prm_cd_atributo);
+    begin
+      if not aux_vet_relac.exists(aux_ds_chave) then
+        p_carregar_relac(prm_cd_objeto   => prm_cd_objeto,
+                         prm_cd_atributo => prm_cd_atributo);
+      end if;
+      return aux_vet_relac(aux_ds_chave);
+    end;
+  
+  function f_mask_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                        prm_cd_atributo in dominio_relacionamento.cd_atributo%type,
+                        prm_ds_valor    in dominio_valor.ds_valor%type)
+    return dominio_valor.ds_mascara%type
+    is
+    begin
+      return f_mask(prm_cd_dominio => f_dm_relac(prm_cd_objeto   => prm_cd_objeto, 
+                                                 prm_cd_atributo => prm_cd_atributo), 
+                    prm_ds_valor   => prm_ds_valor);
+    end;
+  
+  function f_sql_dm(prm_cd_dominio in dominio.cd_dominio%type)
+    return typ_sql
+    is
+    begin
+      return 'select ds_mascara, ds_valor'||
+             '  from dominio_valor'||
+             ' where cd_dominio = '''||prm_cd_dominio||''''||
+             ' order by nr_seq_apresent';
+    end;
+  
+  function f_sql_dm_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                          prm_cd_atributo in dominio_relacionamento.cd_atributo%type)
+    return typ_sql
+    is
+    begin
+      return f_sql_dm(prm_cd_dominio => f_dm_relac(prm_cd_objeto   => prm_cd_objeto, 
+                                                   prm_cd_atributo => prm_cd_atributo));
+    end;
+   
+  function f_val_padrao(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
+                        prm_cd_atributo in dominio_relacionamento.cd_atributo%type,
+                        prm_cd_dominio  in dominio.cd_dominio%type default null)
+    return dominio.ds_valor_padrao%type
+    is
+      aux_ds_val_padr dominio.ds_valor_padrao%type;
+      aux_cd_dominio  dominio.cd_dominio%type;
+    begin
+      begin
+        select dr.ds_valor_padrao
+          into aux_ds_val_padr
+          from dominio_relacionamento dr
+         where dr.cd_objeto   = prm_cd_objeto
+           and dr.cd_atributo = prm_cd_atributo;
+      exception
+        when no_data_found or too_many_rows then
+          aux_ds_val_padr := null;
+      end;
+      
+      if aux_ds_val_padr is null then
+        begin
+          begin
+            aux_cd_dominio := f_dm_relac(prm_cd_objeto   => prm_cd_objeto, 
+                                         prm_cd_atributo => prm_cd_atributo);
+          exception
+            when others then
+              aux_cd_dominio := prm_cd_dominio;
+          end;
+          
+          select d.ds_valor_padrao
+            into aux_ds_val_padr
+            from dominio d
+           where d.cd_dominio = aux_cd_dominio;
+        exception
+          when no_data_found then
+            aux_ds_val_padr := null;
+        end;
+      end if;
+      
+      return aux_ds_val_padr;
+    exception
+      when others then
+        return null;
+    end;
+    
+  procedure p_validar_valor(prm_cd_dominio dominio_valor.cd_dominio%type,
+                            prm_ds_valor   dominio_valor.ds_valor%type)
+    is
+      aux_valid number;
+    begin
+      select 1
+        into aux_valid
+        from dominio_valor dv
+       where dv.cd_dominio = prm_cd_dominio
+         and dv.ds_valor   = prm_ds_valor;
+    exception
+      when too_many_rows then
+        null;
+      when others then
+        k_utils.p_erro_regra('Valor "'||prm_ds_valor||'" inválido para o domínio '||prm_cd_dominio);
+    end p_validar_valor;
+  
+end k_dominio;
+/

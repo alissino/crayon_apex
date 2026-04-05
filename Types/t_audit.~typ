@@ -1,0 +1,141 @@
+create or replace type t_audit as object
+(
+  ds_tabela   varchar2(62),
+  dm_operacao char(1),
+  cd_usuario  varchar2(20),
+  vt_colunas  t_audit_col_vet,
+  
+  constructor function t_audit return self as result,
+  constructor function t_audit(prm_ds_tabela varchar2) return self as result,
+  constructor function t_audit(prm_ds_tabela varchar2, prm_dm_ins boolean, prm_dm_upd boolean, prm_dm_del boolean) return self as result,
+  
+  member function f_operacao(prm_dm_ins boolean, prm_dm_upd boolean, prm_dm_del boolean) return varchar2,
+  
+  member procedure p_add_coluna(prm_ds_coluna varchar2, prm_ds_old varchar2, prm_ds_new varchar2),
+  member procedure p_add_coluna(prm_ds_coluna varchar2, prm_ds_old number, prm_ds_new number),
+  member procedure p_add_coluna(prm_ds_coluna varchar2, prm_ds_old date, prm_ds_new date),
+  
+  member procedure p_salvar
+  
+)
+/
+create or replace type body t_audit is
+  
+  constructor function t_audit return self as result
+  is
+  begin
+    self.ds_tabela   := null;
+    self.dm_operacao := null;
+    self.cd_usuario  := user;
+    self.vt_colunas  := t_audit_col_vet();
+    return;
+  end;
+  
+  constructor function t_audit(prm_ds_tabela varchar2) return self as result
+  is
+  begin
+    self := t_audit();
+    self.ds_tabela := upper(trim(prm_ds_tabela));
+    return;
+  end;
+  
+  constructor function t_audit(prm_ds_tabela varchar2, prm_dm_ins boolean, prm_dm_upd boolean, prm_dm_del boolean) return self as result
+  is
+  begin
+    self := t_audit(prm_ds_tabela);
+    self.dm_operacao := self.f_operacao(prm_dm_ins, prm_dm_upd, prm_dm_del);
+    return;
+  end;
+  
+  member function f_operacao(prm_dm_ins boolean, prm_dm_upd boolean, prm_dm_del boolean) return varchar2
+  is
+  begin
+    return case
+             when prm_dm_ins then k_audit.cns_ins
+             when prm_dm_upd then k_audit.cns_upd
+             when prm_dm_del then k_audit.cns_del
+             else null
+           end;
+  end;
+  
+  member procedure p_add_coluna(prm_ds_coluna varchar2, prm_ds_old varchar2, prm_ds_new varchar2)
+  is
+    aux_coluna t_audit_col := t_audit_col(prm_ds_coluna, prm_ds_old, prm_ds_new);
+    aux_nr_col pls_integer := self.vt_colunas.count + 1;
+  begin
+    self.vt_colunas.extend;
+    self.vt_colunas(aux_nr_col) := aux_coluna;
+  end;
+  
+  member procedure p_add_coluna(prm_ds_coluna varchar2, prm_ds_old number, prm_ds_new number)
+  is
+    aux_coluna t_audit_col := t_audit_col(prm_ds_coluna, prm_ds_old, prm_ds_new);
+    aux_nr_col pls_integer := self.vt_colunas.count + 1;
+  begin
+    self.vt_colunas.extend;
+    self.vt_colunas(aux_nr_col) := aux_coluna;
+  end;
+  
+  member procedure p_add_coluna(prm_ds_coluna varchar2, prm_ds_old date, prm_ds_new date)
+  is
+    aux_coluna t_audit_col := t_audit_col(prm_ds_coluna, prm_ds_old, prm_ds_new);
+    aux_nr_col pls_integer := self.vt_colunas.count + 1;
+  begin
+    self.vt_colunas.extend;
+    self.vt_colunas(aux_nr_col) := aux_coluna;
+  end;
+  
+  member procedure p_salvar
+  is
+    aux_cd_audit number := s_audit_tab.nextval;
+    aux_dt_oper  date   := sysdate;
+    aux_ds_chave varchar2(512);
+    procedure p_chave
+      is
+        aux_ds_val varchar2(512);
+        cursor cur_col is
+        select acc.column_name ds_coluna
+          from all_constraints  ac,
+               all_cons_columns acc
+         where ac.constraint_name = acc.constraint_name
+           and ac.owner           = acc.constraint_name
+           and ac.owner           = k_audit.cns_owner
+           and ac.constraint_type = 'P'
+           and ac.table_name      = self.ds_tabela
+         order by acc.position;
+      begin
+        dbms_output.put_line('passou');
+        for r_col in cur_col loop
+          for idx in 1 .. self.vt_colunas.count loop
+            dbms_output.put_line('key:'||r_col.ds_coluna||' col:'||self.vt_colunas(idx).ds_coluna);
+            if r_col.ds_coluna = self.vt_colunas(idx).ds_coluna then
+              if self.dm_operacao = k_audit.cns_del then
+                aux_ds_val := self.vt_colunas(idx).ds_valor_old;
+              else
+                aux_ds_val := self.vt_colunas(idx).ds_valor_new;
+              end if;
+              aux_ds_chave := aux_ds_chave||aux_ds_val||k_audit.cns_sep;
+              exit;
+            end if;
+          end loop;
+        end loop;
+      end p_chave;
+    
+  begin
+    p_chave;
+    forall i in indices of self.vt_colunas
+      insert
+        into audit_tab
+      values(aux_cd_audit,
+             self.ds_tabela,
+             self.vt_colunas(i).ds_coluna,
+             aux_dt_oper,
+             self.dm_operacao,
+             self.cd_usuario,
+             self.vt_colunas(i).ds_valor_old,
+             self.vt_colunas(i).ds_valor_new,
+             aux_ds_chave);
+  end;
+  
+end;
+/

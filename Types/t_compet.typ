@@ -1,0 +1,114 @@
+create or replace type t_compet as object
+(
+  nr_ano number,
+  nr_mes number,
+  
+  constructor function t_compet return self as result,
+  constructor function t_compet(prm_nr_ano number, prm_nr_mes number) return self as result,
+  constructor function t_compet(prm_nr_compet number) return self as result,
+  constructor function t_compet(prm_ds_compet varchar2) return self as result,
+  constructor function t_compet(prm_dt_compet date) return self as result,
+  
+  member function f_string return varchar2,
+  member function f_number return number,
+  member function f_date   return date,
+  
+  member procedure p_add_compet(prm_nr_mes number)
+  
+)
+/
+create or replace type body t_compet is
+  
+  constructor function t_compet return self as result
+  is
+  begin
+    self.nr_ano := null;
+    self.nr_mes := null;
+    return;
+  end;
+  
+  constructor function t_compet(prm_nr_ano number, prm_nr_mes number) return self as result
+  is
+  begin
+    self.nr_ano := prm_nr_ano;
+    self.nr_mes := prm_nr_mes;
+    return;
+  end;
+  
+  constructor function t_compet(prm_nr_compet number) return self as result
+  is
+  begin
+    self.nr_ano := substr(prm_nr_compet, 1, 4);
+    self.nr_mes := substr(prm_nr_compet, 5, 2);
+    return;
+  end;
+  
+  constructor function t_compet(prm_ds_compet varchar2) return self as result
+  is
+    aux_ds_pos_1 number(4);
+    aux_ds_pos_2 number(4);
+  begin
+    if nvl(instr(prm_ds_compet, '/'), 0) > 0 then
+      aux_ds_pos_1 := substr(prm_ds_compet, 1, instr(prm_ds_compet, '/') - 1);
+      aux_ds_pos_2 := substr(prm_ds_compet, instr(prm_ds_compet, '/') + 1, length(prm_ds_compet));
+      dbms_output.put_line(aux_ds_pos_1||'|'||aux_ds_pos_2);
+      if length(aux_ds_pos_1) = 2 then
+        self := t_compet(aux_ds_pos_2, aux_ds_pos_1);
+        return;
+      end if;
+      self := t_compet(aux_ds_pos_1, aux_ds_pos_2);
+      return;
+    end if;
+    self := t_compet(to_number(prm_ds_compet));
+    return;
+  end;
+  
+  constructor function t_compet(prm_dt_compet date) return self as result
+  is
+  begin
+    self := t_compet(to_number(to_char(prm_dt_compet, 'yyyymm')));
+    return;
+  end;
+  
+  member function f_string return varchar2
+  is
+  begin
+    return lpad(self.nr_mes, 2, '0') || '/' || self.nr_ano;
+  end;
+  
+  member function f_number return number
+  is
+  begin
+    return self.nr_ano || lpad(self.nr_mes, 2, '0');
+  end;
+  
+  member function f_date return date
+  is
+  begin
+    return to_date(f_string(), 'mm/yyyy');
+  end;
+  
+  member procedure p_add_compet(prm_nr_mes number)
+  is
+  begin
+    if prm_nr_mes > 0 then
+      for nr_mes in 1 .. prm_nr_mes loop
+        if self.nr_mes >= 12 then
+          self.nr_mes := 0;
+          self.nr_ano := self.nr_ano + 1;
+        end if;
+        self.nr_mes := self.nr_mes + 1;
+      end loop;
+    else
+      for nr_mes in 1 .. (prm_nr_mes * -1) loop
+        if self.nr_mes <= 1 then
+          self.nr_mes := 13;
+          self.nr_ano := self.nr_ano - 1;
+        end if;
+        self.nr_mes := self.nr_mes - 1;
+      end loop;
+    end if;
+  end;
+  
+end;
+/

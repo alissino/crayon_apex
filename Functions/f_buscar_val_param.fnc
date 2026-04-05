@@ -1,0 +1,8 @@
+create or replace function f_buscar_val_param(prm_cd_parametro parametro.cd_parametro%type,
+                                              prm_cd_usuario   k_usuario.typ_usuario default k_parametro.aux_cd_usuario) 
+  return parametro.ds_valor%type
+is
+begin
+  return k_parametro.f_valor(prm_cd_parametro => prm_cd_parametro, prm_cd_usuario => prm_cd_usuario);
+end f_buscar_val_param;
+/

@@ -1,0 +1,89 @@
+create or replace type t_lista as object
+(
+  vt_lista t_lista_itm_vet,
+  
+  constructor function t_lista return self as result,
+  constructor function t_lista(prm_ds_lista varchar2, prm_ds_separador varchar2 default ',') return self as result,
+  
+  member procedure p_add_item(prm_ds_item varchar2, prm_nr_index integer default 0),
+  member procedure p_add_item(prm_ds_item number, prm_nr_index integer default 0),
+  member procedure p_add_item(prm_ds_item date, prm_nr_index integer default 0),
+  
+  member procedure p_del_item(prm_ds_item varchar2),
+  member procedure p_del_item(prm_ds_item number),
+  member procedure p_del_item(prm_ds_item date),
+  
+  member procedure p_del_index(prm_nr_index integer),
+  
+  member function f_existe(prm_ds_item varchar2) return boolean,
+  member function f_existe(prm_ds_item number) return boolean,
+  member function f_existe(prm_ds_item date) return boolean,
+  
+  member function f_index(prm_ds_item varchar2) return integer,
+  member function f_index(prm_ds_item number) return integer,
+  member function f_index(prm_ds_item date) return integer,
+  
+  member function f_qtd_itens return integer,
+  
+  member function f_item_ds(prm_nr_index integer) return varchar2,
+  member function f_item_nr(prm_nr_index integer) return number,
+  member function f_item_dt(prm_nr_index integer) return date,
+  
+  member procedure p_limpar
+  
+)
+/
+create or replace type body t_lista is
+  
+  constructor function t_lista return self as result
+  is
+  begin
+    self.vt_lista := t_lista_itm_vet();
+    return;
+  end;
+  
+  constructor function t_lista(prm_ds_lista varchar2, prm_ds_separador varchar2 default ',') return self as result
+  is
+  begin
+    self := t_lista();
+    -- ler a lista
+    return;
+  end;
+  
+  member procedure p_add_item(prm_ds_item varchar2, prm_nr_index integer default 0),
+  member procedure p_add_item(prm_ds_item number, prm_nr_index integer default 0),
+  member procedure p_add_item(prm_ds_item date, prm_nr_index integer default 0),
+  
+  member procedure p_del_item(prm_ds_item varchar2),
+  member procedure p_del_item(prm_ds_item number),
+  member procedure p_del_item(prm_ds_item date),
+  
+  member procedure p_del_index(prm_nr_index integer),
+  
+  member function f_existe(prm_ds_item varchar2) return boolean,
+  member function f_existe(prm_ds_item number) return boolean,
+  member function f_existe(prm_ds_item date) return boolean,
+  
+  member function f_index(prm_ds_item varchar2) return integer,
+  member function f_index(prm_ds_item number) return integer,
+  member function f_index(prm_ds_item date) return integer,
+  
+  member function f_qtd_itens 
+    return integer
+  is
+  begin
+    return self.vt_lista.count;
+  end;
+  
+  member function f_item_ds(prm_nr_index integer) return varchar2,
+  member function f_item_nr(prm_nr_index integer) return number,
+  member function f_item_dt(prm_nr_index integer) return date,
+  
+  member procedure p_limpar
+  is
+  begin
+    self.c.delete;
+  end;
+  
+end;
+/

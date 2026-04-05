@@ -1,0 +1,9 @@
+create or replace procedure p_buscar_val_param(prm_cd_parametro in  parametro.cd_parametro%type, 
+                                               prm_cd_usuario   in  k_usuario.typ_usuario default k_parametro.aux_cd_usuario, 
+                                               prm_ds_valor     out parametro.ds_valor%type) 
+is
+begin
+  prm_ds_valor := k_parametro.f_valor(prm_cd_parametro => prm_cd_parametro,
+                                      prm_cd_usuario   => prm_cd_usuario);
+end p_buscar_val_param;
+/
