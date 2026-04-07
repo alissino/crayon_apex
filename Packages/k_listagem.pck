@@ -14,6 +14,10 @@ create or replace package k_listagem is
   cursor cur_colunas (prm_cd_listagem in listagem_coluna.cd_listagem%type)
   return typ_rc_colunas;
   
+  procedure p_salvar(prm_cd_listagem in listagem.cd_listagem%type,
+                     prm_ds_listagem in listagem.ds_listagem%type,
+                     prm_ds_sql      in listagem.ds_sql%type);
+  
   function f_buscar_sql(prm_cd_listagem listagem.cd_listagem%type)
     return listagem.ds_sql%type;
 
@@ -50,6 +54,30 @@ create or replace package body k_listagem
            from listagem_coluna lc
           where lc.cd_listagem = prm_cd_listagem
           order by lc.nr_ordem;
+          
+  procedure p_salvar(prm_cd_listagem in listagem.cd_listagem%type,
+                     prm_ds_listagem in listagem.ds_listagem%type,
+                     prm_ds_sql      in listagem.ds_sql%type)
+    is
+      
+    begin
+      merge 
+       into listagem l
+      using (select prm_cd_listagem cd, 
+                    prm_ds_listagem ds, 
+                    prm_ds_sql ds_sql
+               from dual) prm
+         on (prm.cd = l.cd_listagem)
+       when matched then
+         update set l.ds_listagem = prm.ds,
+                    l.ds_sql      = prm.ds_sql
+       when not matched then
+         insert
+         values (prm.cd,
+                 prm.ds,
+                 prm.ds_sql);
+      commit;
+    end;
   
   procedure p_binds_padrao(prm_cd_cursor in out integer)
     is

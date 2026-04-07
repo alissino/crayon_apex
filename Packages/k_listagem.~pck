@@ -86,35 +86,33 @@ create or replace package body k_listagem
           into aux_sql
           from listagem l
          where l.cd_listagem = prm_cd_listagem;
-        aux_vt_sqls(prm_cd_listagem) := aux_sql;
+        
+        aux_sql_dominio := 'select '||chr(13);
+        for rec_coluna in (select lc.cd_coluna,
+                                  lc.cd_dominio,
+                                  row_number() over (order by lc.nr_ordem) nr_col
+                             from listagem_coluna lc
+                            where lc.cd_listagem = prm_cd_listagem
+                            order by lc.nr_ordem)
+        loop
+          if rec_coluna.nr_col > 1 then
+            aux_sql_dominio := aux_sql_dominio || ', ' || chr(13);
+          end if;
+          if rec_coluna.cd_dominio is null then
+            aux_sql_dominio := aux_sql_dominio || rec_coluna.cd_coluna;
+          else
+            aux_sql_dominio := aux_sql_dominio || 'k_dominio.f_mask(''' 
+                                               || rec_coluna.cd_dominio || ''', ' 
+                                               || rec_coluna.cd_coluna || ') ' 
+                                               || rec_coluna.cd_coluna;
+          end if;
+        end loop;
+        
+        aux_sql_dominio := rtrim(aux_sql_dominio, ', ' || chr(13));
+        aux_sql_dominio := aux_sql_dominio || chr(13) || 'from ('||aux_sql||')';
+        
+        aux_vt_sqls(prm_cd_listagem) := aux_sql_dominio;
       end if;
-      
-      aux_sql_dominio := 'select '||chr(13);
-      for rec_coluna in (select lc.cd_coluna,
-                                lc.cd_dominio,
-                                row_number() over (order by lc.nr_ordem) nr_col
-                           from listagem_coluna lc
-                          where lc.cd_listagem = prm_cd_listagem
-                          order by lc.nr_ordem)
-      loop
-        if rec_coluna.cd_dominio is null then
-          aux_sql_dominio := aux_sql_dominio || rec_coluna.cd_coluna;
-        else
-          aux_sql_dominio := aux_sql_dominio || 'k_processo.f_mask(''' 
-                                             || rec_coluna.cd_dominio || ''', ' 
-                                             || rec_coluna.cd_coluna || ') ' 
-                                             || rec_coluna.cd_coluna;
-        end if;
-        if rec_coluna.nr_col > 1 then
-          aux_sql_dominio := aux_sql_dominio || ', ' || chr(13);
-        end if;
-      end loop;
-      
-      aux_sql_dominio := rtrim(aux_sql_dominio, ', ' || chr(13));
-      aux_sql_dominio := aux_sql_dominio || chr(13) || 'from ('||aux_vt_sqls(prm_cd_listagem)||')';
-      
-      dbms_output.put_line(aux_sql_dominio);
-      
       return aux_vt_sqls(prm_cd_listagem);
     end f_buscar_sql;
 
