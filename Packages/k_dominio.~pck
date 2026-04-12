@@ -29,6 +29,26 @@ create or replace package k_dominio is
   
   procedure p_validar_valor(prm_cd_dominio dominio_valor.cd_dominio%type,
                             prm_ds_valor   dominio_valor.ds_valor%type);
+  
+  procedure p_salvar_dm(prm_cd_dominio         in dominio.cd_dominio%type,
+                        prm_cd_dominio_old     in dominio.cd_dominio%type,
+                        prm_ds_dominio         in dominio.ds_dominio%type,
+                        prm_fg_colorir         in dominio.fg_colorir%type,
+                        prm_nr_max_caracteres  in dominio.nr_max_caracteres%type,
+                        prm_ds_valor_padrao    in dominio.ds_valor_padrao%type);
+                        
+  procedure p_salvar_valor(prm_cd_dm_valor     in dominio_valor.cd_dm_valor%type,
+                           prm_cd_dominio      in dominio_valor.cd_dominio%type,
+                           prm_nr_seq_apresent in dominio_valor.nr_seq_apresent%type,
+                           prm_ds_valor        in dominio_valor.ds_valor%type,
+                           prm_ds_mascara      in dominio_valor.ds_mascara%type,
+                           prm_ds_descricao    in dominio_valor.ds_descricao%type);
+  
+  procedure p_salvar_relac(prm_cd_dm_relac     in dominio_relacionamento.cd_dm_relac%type,
+                           prm_cd_dominio      in dominio_relacionamento.cd_dominio%type,
+                           prm_cd_objeto       in dominio_relacionamento.cd_objeto%type,
+                           prm_cd_atributo     in dominio_relacionamento.cd_atributo%type,
+                           prm_ds_valor_padrao in dominio_relacionamento.ds_valor_padrao%type);
 
 end k_dominio;
 /
@@ -60,7 +80,7 @@ create or replace package body k_dominio is
   procedure p_carregar_relac(prm_cd_objeto   in dominio_relacionamento.cd_objeto%type,
                              prm_cd_atributo in dominio_relacionamento.cd_atributo%type)
     is
-      aux_ds_chave typ_chave := prm_cd_objeto||'|'||prm_cd_atributo;
+      aux_ds_chave typ_chave := upper(prm_cd_objeto||'|'||prm_cd_atributo);
     begin
       select dr.cd_dominio
         into aux_vet_relac(aux_ds_chave)
@@ -186,6 +206,100 @@ create or replace package body k_dominio is
       when others then
         k_utils.p_erro_regra('Valor "'||prm_ds_valor||'" inválido para o domínio '||prm_cd_dominio);
     end p_validar_valor;
+    
+  procedure p_salvar_dm(prm_cd_dominio         in dominio.cd_dominio%type,
+                        prm_cd_dominio_old     in dominio.cd_dominio%type,
+                        prm_ds_dominio         in dominio.ds_dominio%type,
+                        prm_fg_colorir         in dominio.fg_colorir%type,
+                        prm_nr_max_caracteres  in dominio.nr_max_caracteres%type,
+                        prm_ds_valor_padrao    in dominio.ds_valor_padrao%type)
+    is
+    begin
+      if prm_cd_dominio_old is null then
+        insert
+          into dominio
+              (cd_dominio,
+               ds_dominio,
+               fg_colorir,
+               nr_max_caracteres,
+               ds_valor_padrao)
+        values(prm_cd_dominio,
+               prm_ds_dominio,
+               prm_fg_colorir,
+               prm_nr_max_caracteres,
+               prm_ds_valor_padrao);
+      else
+        update dominio d
+           set d.cd_dominio        = prm_cd_dominio,
+               d.ds_dominio        = prm_ds_dominio,
+               d.fg_colorir        = prm_fg_colorir,
+               d.nr_max_caracteres = prm_nr_max_caracteres,
+               d.ds_valor_padrao   = prm_ds_valor_padrao
+         where d.cd_dominio = prm_cd_dominio_old;
+      end if;
+      commit;
+    end;
+    
+  procedure p_salvar_valor(prm_cd_dm_valor     in dominio_valor.cd_dm_valor%type,
+                           prm_cd_dominio      in dominio_valor.cd_dominio%type,
+                           prm_nr_seq_apresent in dominio_valor.nr_seq_apresent%type,
+                           prm_ds_valor        in dominio_valor.ds_valor%type,
+                           prm_ds_mascara      in dominio_valor.ds_mascara%type,
+                           prm_ds_descricao    in dominio_valor.ds_descricao%type)
+    is
+    begin
+      if prm_cd_dm_valor is null then
+        insert
+          into dominio_valor
+              (cd_dominio,
+               nr_seq_apresent,
+               ds_valor,
+               ds_mascara,
+               ds_descricao)
+        values(prm_cd_dominio,
+               prm_nr_seq_apresent,
+               prm_ds_valor,
+               prm_ds_mascara,
+               prm_ds_descricao);
+      else
+        update dominio_valor dv
+           set dv.cd_dominio      = prm_cd_dominio,
+               dv.nr_seq_apresent = prm_nr_seq_apresent,
+               dv.ds_valor        = prm_ds_valor,
+               dv.ds_mascara      = prm_ds_mascara,
+               dv.ds_descricao    = prm_ds_descricao
+         where dv.cd_dm_valor = prm_cd_dm_valor;
+      end if;
+    end;
+    
+  procedure p_salvar_relac(prm_cd_dm_relac     in dominio_relacionamento.cd_dm_relac%type,
+                           prm_cd_dominio      in dominio_relacionamento.cd_dominio%type,
+                           prm_cd_objeto       in dominio_relacionamento.cd_objeto%type,
+                           prm_cd_atributo     in dominio_relacionamento.cd_atributo%type,
+                           prm_ds_valor_padrao in dominio_relacionamento.ds_valor_padrao%type)
+    is
+    begin
+      if prm_cd_dm_relac is null then
+        insert
+          into dominio_relacionamento
+              (cd_dominio,
+               cd_objeto,
+               cd_atributo,
+               ds_valor_padrao)
+        values(prm_cd_dominio,
+               prm_cd_objeto,
+               prm_cd_atributo,
+               prm_ds_valor_padrao);
+      else
+        update dominio_relacionamento dr
+           set dr.cd_dominio      = prm_cd_dominio,
+               dr.cd_objeto       = prm_cd_objeto,
+               dr.cd_atributo     = prm_cd_atributo,
+               dr.ds_valor_padrao = prm_ds_valor_padrao
+         where dr.cd_dm_relac = prm_cd_dm_relac;
+      end if;
+      commit;
+    end;
   
 end k_dominio;
 /

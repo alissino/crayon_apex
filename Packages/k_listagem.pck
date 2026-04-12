@@ -31,6 +31,34 @@ create or replace package k_listagem is
     
   function f_buscar_retorno(prm_cd_listagem in listagem.cd_listagem%type)
     return varchar2;
+    
+  procedure p_salvar_list(prm_cd_listagem     in listagem.cd_listagem%type,
+                          prm_cd_listagem_old in listagem.cd_listagem%type,
+                          prm_ds_listagem     in listagem.ds_listagem%type,
+                          prm_ds_sql          in listagem.ds_sql%type);
+  
+  procedure p_salvar_col(prm_cd_listagem    in listagem_coluna.cd_listagem%type,
+                         prm_cd_coluna      in listagem_coluna.cd_coluna%type,
+                         prm_nr_ordem       in listagem_coluna.nr_ordem%type,
+                         prm_ds_coluna      in listagem_coluna.ds_coluna%type,
+                         prm_ds_mascara     in listagem_coluna.ds_mascara%type,
+                         prm_dm_alinhamento in listagem_coluna.dm_alinhamento%type,
+                         prm_dm_expandir    in listagem_coluna.dm_expandir%type,
+                         prm_qt_tamanho     in listagem_coluna.qt_tamanho%type,
+                         prm_fg_retorno     in listagem_coluna.fg_retorno%type,
+                         prm_cd_dominio     in listagem_coluna.cd_dominio%type,
+                         prm_dm_tipo        in listagem_coluna.dm_tipo%type);
+  
+  procedure p_salvar_filt(prm_cd_listagem    in listagem_filtro.cd_listagem%type,
+                          prm_cd_filtro      in listagem_filtro.cd_filtro%type,
+                          prm_ds_filtro      in listagem_filtro.ds_filtro%type,
+                          prm_dm_campo       in listagem_filtro.dm_campo%type,
+                          prm_ds_sql         in listagem_filtro.ds_sql%type,
+                          prm_cd_dominio     in listagem_filtro.cd_dominio%type,
+                          prm_fg_obrigatorio in listagem_filtro.fg_obrigatorio%type,
+                          prm_nr_ordem       in listagem_filtro.nr_ordem%type,
+                          prm_nr_linha       in listagem_filtro.nr_linha%type  default null,
+                          prm_nr_coluna      in listagem_filtro.nr_coluna%type default null);
 
 end k_listagem;
 /
@@ -259,6 +287,114 @@ create or replace package body k_listagem
          and lc.fg_retorno  = 'S';
       return aux_lista;
     end f_buscar_retorno;
+  
+  procedure p_salvar_list(prm_cd_listagem     in listagem.cd_listagem%type,
+                          prm_cd_listagem_old in listagem.cd_listagem%type,
+                          prm_ds_listagem     in listagem.ds_listagem%type,
+                          prm_ds_sql          in listagem.ds_sql%type)
+    is
+    begin
+      if prm_cd_listagem_old is null then
+        insert
+          into listagem
+              (cd_listagem,
+               ds_listagem,
+               ds_sql)
+        values(prm_cd_listagem,
+               prm_ds_listagem,
+               prm_ds_sql);
+      else
+        update listagem l
+           set l.cd_listagem = prm_cd_listagem,
+               l.ds_listagem = prm_ds_listagem,
+               l.ds_sql      = prm_ds_sql
+         where l.cd_listagem = prm_cd_listagem_old;
+      end if;
+    end;
+  
+  procedure p_salvar_col(prm_cd_listagem    in listagem_coluna.cd_listagem%type,
+                         prm_cd_coluna      in listagem_coluna.cd_coluna%type,
+                         prm_nr_ordem       in listagem_coluna.nr_ordem%type,
+                         prm_ds_coluna      in listagem_coluna.ds_coluna%type,
+                         prm_ds_mascara     in listagem_coluna.ds_mascara%type,
+                         prm_dm_alinhamento in listagem_coluna.dm_alinhamento%type,
+                         prm_dm_expandir    in listagem_coluna.dm_expandir%type,
+                         prm_qt_tamanho     in listagem_coluna.qt_tamanho%type,
+                         prm_fg_retorno     in listagem_coluna.fg_retorno%type,
+                         prm_cd_dominio     in listagem_coluna.cd_dominio%type,
+                         prm_dm_tipo        in listagem_coluna.dm_tipo%type)
+    is
+    begin
+      update listagem_coluna lc
+         set lc.nr_ordem       = prm_nr_ordem,
+             lc.ds_coluna      = prm_ds_coluna,
+             lc.ds_mascara     = prm_ds_mascara,
+             lc.dm_alinhamento = prm_dm_alinhamento,
+             lc.dm_expandir    = prm_dm_expandir,
+             lc.qt_tamanho     = prm_qt_tamanho,
+             lc.fg_retorno     = prm_fg_retorno,
+             lc.cd_dominio     = prm_cd_dominio,
+             lc.dm_tipo        = prm_dm_tipo
+       where lc.cd_listagem = prm_cd_listagem
+         and lc.cd_coluna   = prm_cd_coluna;
+    end;
+  
+  procedure p_salvar_filt(prm_cd_listagem    in listagem_filtro.cd_listagem%type,
+                          prm_cd_filtro      in listagem_filtro.cd_filtro%type,
+                          prm_ds_filtro      in listagem_filtro.ds_filtro%type,
+                          prm_dm_campo       in listagem_filtro.dm_campo%type,
+                          prm_ds_sql         in listagem_filtro.ds_sql%type,
+                          prm_cd_dominio     in listagem_filtro.cd_dominio%type,
+                          prm_fg_obrigatorio in listagem_filtro.fg_obrigatorio%type,
+                          prm_nr_ordem       in listagem_filtro.nr_ordem%type,
+                          prm_nr_linha       in listagem_filtro.nr_linha%type  default null,
+                          prm_nr_coluna      in listagem_filtro.nr_coluna%type default null)
+    is
+      aux_fg_existe number;
+    begin
+      select count(1)
+        into aux_fg_existe
+        from listagem_filtro lf
+       where lf.cd_listagem = prm_cd_listagem
+         and lf.cd_filtro   = prm_cd_filtro;
+      
+      if nvl(aux_fg_existe, 0) = 0 then
+        insert
+          into listagem_filtro
+              (cd_listagem,
+               cd_filtro,
+               ds_filtro,
+               dm_campo,
+               ds_sql,
+               cd_dominio,
+               fg_obrigatorio,
+               nr_ordem,
+               nr_linha,
+               nr_coluna)
+        values(prm_cd_listagem,
+               prm_cd_filtro,
+               prm_ds_filtro,
+               prm_dm_campo,
+               prm_ds_sql,
+               prm_cd_dominio,
+               prm_fg_obrigatorio,
+               prm_nr_ordem,
+               prm_nr_linha,
+               prm_nr_coluna);
+      else
+        update listagem_filtro lf
+           set lf.ds_filtro      = prm_ds_filtro,
+               lf.dm_campo       = prm_dm_campo,
+               lf.ds_sql         = prm_ds_sql,
+               lf.cd_dominio     = prm_cd_dominio,
+               lf.fg_obrigatorio = prm_fg_obrigatorio,
+               lf.nr_ordem       = prm_nr_ordem,
+               lf.nr_linha       = prm_nr_linha,
+               lf.nr_coluna      = prm_nr_coluna
+         where lf.cd_listagem = prm_cd_listagem
+           and lf.cd_filtro   = prm_cd_filtro;
+      end if;
+    end;
   
 end k_listagem;
 /

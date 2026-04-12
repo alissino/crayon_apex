@@ -10,6 +10,14 @@ create or replace package k_parametro is
                   prm_cd_usuario   in k_usuario.typ_usuario default aux_cd_usuario)
     return varchar2;
   
+  function f_valor_lista(prm_cd_parametro in parametro.cd_parametro%type,
+                         prm_cd_usuario   in parametro_usuario.cd_usuario%type default aux_cd_usuario)
+    return k_lista.typ_lista;
+    
+  function f_valor_lista_pipe(prm_cd_parametro in parametro.cd_parametro%type,
+                              prm_cd_usuario   in parametro_usuario.cd_usuario%type default aux_cd_usuario)
+    return k_lista.typ_lista pipelined;
+  
   procedure p_salvar(prm_cd_parametro in parametro.cd_parametro%type,
                      prm_ds_nome      in parametro.ds_nome%type,
                      prm_ds_descricao in parametro.ds_descricao%type,
@@ -54,7 +62,6 @@ create or replace package body k_parametro is
   procedure p_carregar(prm_cd_parametro in parametro.cd_parametro%type,
                        prm_cd_usuario   in k_usuario.typ_usuario)
     is
-      aux_ds_valor  parametro.ds_valor%type;
       aux_ds_chave  typ_chave := f_chave(prm_cd_parametro, prm_cd_usuario);
       aux_obj_param typ_obj_param;
     begin
@@ -125,6 +132,40 @@ create or replace package body k_parametro is
         aux_ds_mask := aux_obj_param.ds_valor;
       end if;
       return aux_ds_mask;
+    end;
+  
+  function f_valor_lista(prm_cd_parametro in parametro.cd_parametro%type,
+                         prm_cd_usuario   in parametro_usuario.cd_usuario%type default aux_cd_usuario)
+    return k_lista.typ_lista
+    is
+      aux_vt_lista k_lista.typ_lista;
+      aux_ds_chave typ_chave := f_chave(prm_cd_parametro, prm_cd_usuario);
+    begin
+      if not aux_vet_valor.exists(aux_ds_chave) then
+        p_carregar(prm_cd_parametro => prm_cd_parametro,
+                   prm_cd_usuario   => prm_cd_usuario);
+      end if;
+      
+      k_lista.p_criar_lista(prm_ds_string    => aux_vet_valor(aux_ds_chave).ds_valor,
+                            prm_vt_lista     => aux_vt_lista,
+                            prm_ds_separador => aux_vet_valor(aux_ds_chave).ds_separador);
+      
+      return aux_vt_lista;
+      
+    end f_valor_lista;
+  
+  function f_valor_lista_pipe(prm_cd_parametro in parametro.cd_parametro%type,
+                              prm_cd_usuario   in parametro_usuario.cd_usuario%type default aux_cd_usuario)
+    return k_lista.typ_lista pipelined
+    is
+      aux_vt_lista k_lista.typ_lista;
+    begin
+      aux_vt_lista := k_parametro.f_valor_lista(prm_cd_parametro, prm_cd_usuario);
+      
+      for i in 1 .. aux_vt_lista.count loop
+        pipe row(aux_vt_lista(i));
+      end loop;
+      return;
     end;
   
   procedure p_salvar(prm_cd_parametro in parametro.cd_parametro%type,

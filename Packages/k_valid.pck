@@ -129,13 +129,15 @@ create or replace package body k_valid is
       aux_coluna t_valid_col;
       aux_nr_col number;
     begin
-      for aux_nr_col in 1 .. prm_tp_valid.vt_colunas.count loop
-        aux_coluna := prm_tp_valid.vt_colunas(aux_nr_col);
-        p_valid_dominio(aux_coluna.f_buscar_dominio, aux_coluna.ds_valor_new);
-        
-        p_valid_regra(aux_coluna, prm_tp_valid);
-        
-      end loop;
+      if prm_tp_valid.dm_operacao <> 'D' then
+        for aux_nr_col in 1 .. prm_tp_valid.vt_colunas.count loop
+          aux_coluna := prm_tp_valid.vt_colunas(aux_nr_col);
+          p_valid_dominio(aux_coluna.f_buscar_dominio, aux_coluna.ds_valor_new);
+          
+          p_valid_regra(aux_coluna, prm_tp_valid);
+          
+        end loop;
+      end if;
     exception
       when k_utils.e_regra_negocio then
         p_mostra_erro('Erro de validação.'||chr(13)||

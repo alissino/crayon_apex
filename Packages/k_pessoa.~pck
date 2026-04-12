@@ -1,0 +1,51 @@
+create or replace package k_pessoa is
+
+  function f_buscar_nome(prm_cd_pessoa pessoa.cd_pessoa%type)
+    return pessoa.ds_nome%type;
+  
+  function f_buscar_doc(prm_cd_pessoa    pessoa.cd_pessoa%type,
+                        prm_cd_documento documento.cd_documento%type)
+    return pessoa_documento.ds_documento%type;
+
+end k_pessoa;
+/
+create or replace package body k_pessoa is
+
+  function f_buscar_nome(prm_cd_pessoa pessoa.cd_pessoa%type)
+    return pessoa.ds_nome%type
+    is
+      aux_ds_nome pessoa.ds_nome%type;
+    begin
+      select nvl(p.ds_nome_social, p.ds_nome)
+        into aux_ds_nome
+        from pessoa p
+       where p.cd_pessoa = prm_cd_pessoa;
+      return aux_ds_nome;
+    exception
+      when no_data_found or too_many_rows then
+        return null;
+      when others then
+        raise;
+    end;
+  
+  function f_buscar_doc(prm_cd_pessoa    pessoa.cd_pessoa%type,
+                        prm_cd_documento documento.cd_documento%type)
+    return pessoa_documento.ds_documento%type
+    is
+      aux_ds_doc pessoa_documento.ds_documento%type;
+    begin
+      select pd.ds_documento
+        into aux_ds_doc
+        from pessoa_documento pd
+       where pd.cd_pessoa    = prm_cd_pessoa
+         and pd.cd_documento = prm_cd_documento;
+      return aux_ds_doc;
+    exception
+      when no_data_found or too_many_rows then
+        return null;
+      when others then
+        raise;
+    end;
+
+end k_pessoa;
+/

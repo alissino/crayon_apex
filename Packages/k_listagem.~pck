@@ -151,10 +151,17 @@ create or replace package body k_listagem
       aux_rc_coluna  dbms_sql.desc_rec;
       aux_qt_colunas number;
       aux_rc_col     listagem_coluna%rowtype;
+      aux_ds_sql     listagem.ds_sql%type;
     begin
+      
+      select l.ds_sql
+        into aux_ds_sql
+        from listagem l
+       where l.cd_listagem = prm_cd_listagem;
+    
       aux_cd_cursor := dbms_sql.open_cursor;
       dbms_sql.parse(aux_cd_cursor,
-                     f_buscar_sql(prm_cd_listagem),
+                     aux_ds_sql,
                      dbms_sql.native);
       dbms_sql.describe_columns(aux_cd_cursor,
                                 aux_qt_colunas,

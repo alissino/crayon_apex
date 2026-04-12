@@ -8,6 +8,10 @@ create or replace package k_audit is
   cns_owner   constant varchar2(20) := 'CRAYON';
   
   procedure p_gerar_trigger(prm_ds_tabela varchar2);
+  
+  procedure p_prcsso_gerar_trg(prm_cd_geracao geracao_prcsso.nr_sequencia%type);
+  
+  procedure p_prcsso_gerar_trg_todas(prm_cd_geracao geracao_prcsso.nr_sequencia%type);
 
 end k_audit;
 /
@@ -52,6 +56,60 @@ create or replace package body k_audit is
       
       execute immediate aux_ds_trigger;
     
+    end;
+    
+  procedure p_prcsso_gerar_trg(prm_cd_geracao geracao_prcsso.nr_sequencia%type)
+    is
+      aux_ds_tabela audit_tab.ds_tabela%type;
+    begin
+      k_processo.p_buscar_prm(prm_cd_geracao, 1, aux_ds_tabela);
+      
+      k_audit.p_gerar_trigger(aux_ds_tabela);
+    
+    exception
+      when others then
+        k_processo.p_salvar_erro(prm_cd_geracao, sqlerrm);
+      
+    end;
+  
+  procedure p_prcsso_gerar_trg_todas(prm_cd_geracao geracao_prcsso.nr_sequencia%type)
+    is
+      aux_ds_tabelas varchar2(4000);
+      aux_dm_todas   char(1);
+      aux_vt_tabelas k_lista.typ_lista;
+      aux_cd_geracao geracao_prcsso.nr_sequencia%type;
+      aux_bl_erro    boolean;
+    begin
+      k_processo.p_buscar_prm(prm_cd_geracao, 1, aux_dm_todas);
+      k_processo.p_buscar_prm(prm_cd_geracao, 2, aux_ds_tabelas);
+      
+      if aux_dm_todas = 'N' then
+        k_lista.p_criar_lista(prm_ds_string    => aux_ds_tabelas,
+                              prm_vt_lista     => aux_vt_tabelas,
+                              prm_ds_separador => ',');
+        
+        for i in 1 .. aux_vt_tabelas.count loop
+          k_processo.p_processar_agora(prm_cd_prcsso     => 'gerar_trigger_audit_tab',
+                                       prm_cd_prcsso_ori => prm_cd_geracao,
+                                       prm_ds_params     => aux_vt_tabelas(i)||k_lista.cns_ds_sep,
+                                       prm_cd_geracao    => aux_cd_geracao,
+                                       prm_vf_erro       => aux_bl_erro);
+        end loop;
+        
+      else
+        for tab in (select u.table_name
+                      from user_tables u
+                     where u.table_name not in (select upper(column_value)
+                                                  from table(k_parametro.f_valor_lista_pipe('tabelas_nao_gerar_trg_audit'))))
+        loop
+          k_processo.p_processar_agora(prm_cd_prcsso     => 'gerar_trigger_audit_tab',
+                                       prm_cd_prcsso_ori => prm_cd_geracao,
+                                       prm_ds_params     => tab.table_name,
+                                       prm_cd_geracao    => aux_cd_geracao,
+                                       prm_vf_erro       => aux_bl_erro);
+        end loop;
+      end if;
+      
     end;
   
 end k_audit;

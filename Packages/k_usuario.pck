@@ -28,7 +28,8 @@ is
     return typ_usuario
     is
     begin
-      return nvl(sys_context('x_crayon_usuario', 'cd_usuario'), user);
+      
+      return nvl(nvl(v('APP_USER'), sys_context('x_crayon_usuario', 'cd_usuario')), user);
     end;
   
 end k_usuario;

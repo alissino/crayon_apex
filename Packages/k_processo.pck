@@ -56,6 +56,16 @@ is
                              
   procedure p_salvar_arquivo(prm_cd_geracao geracao_prcsso_arq.nr_seq_prcsso%type,
                              prm_cd_arquivo geracao_prcsso_arq.cd_arquivo%type);
+  
+  /* APEX */
+  procedure p_montar_tela(prm_cd_processo processo.cd_prcsso%type);
+  
+  procedure p_gerar_processo_apex(prm_cd_prcsso  in  processo.cd_prcsso%type,
+                                  prm_dm_geracao in  geracao_prcsso.dm_geracao%type default 'I',
+                                  prm_cd_geracao out geracao_prcsso.nr_sequencia%type,
+                                  prm_ds_erro    out varchar2);
+  
+  procedure p_download_arq_apex(prm_cd_arquivo geracao_prcsso_arq.nr_sequencia%type);
                              
 
 end k_processo;
@@ -100,14 +110,23 @@ is
                      prm_cd_geracao       out geracao_prcsso.nr_sequencia%type)
     is
       aux_rg_geracao geracao_prcsso%rowtype;
+      aux_cd_usuario geracao_prcsso.cd_usuario%type := prm_cd_usuario;
     begin
+      if prm_cd_prcsso_origem is not null then
+        select gp.cd_usuario
+          into aux_cd_usuario
+          from geracao_prcsso gp
+         where gp.nr_sequencia = prm_cd_prcsso_origem;
+      end if;
+    
       aux_rg_geracao.nr_sequencia     := s_grc_prcsso.nextval;
       aux_rg_geracao.cd_prcsso        := prm_cd_prcsso;
       aux_rg_geracao.dt_geracao       := prm_dt_geracao;
-      aux_rg_geracao.cd_usuario       := prm_cd_usuario;
+      aux_rg_geracao.cd_usuario       := aux_cd_usuario;
       aux_rg_geracao.dm_geracao       := prm_dm_geracao;
       aux_rg_geracao.cd_prcsso_origem := prm_cd_prcsso_origem;
       aux_rg_geracao.dt_criacao       := sysdate;
+      aux_rg_geracao.fg_erro          := k_dominio.f_val_padrao('geracao_prcsso', 'fg_erro');
       
       insert 
         into geracao_prcsso
@@ -382,6 +401,167 @@ is
       
     end;
   
+  procedure p_montar_tela(prm_cd_processo processo.cd_prcsso%type)
+    is
+      cursor cur_param
+          is select pp.dm_componente,
+                    pp.ds_label,
+                    pp.fg_obrigatorio,
+                    pp.ds_sql,
+                    pp.cd_dominio,
+                    pp.ds_mascara,
+                    pp.ds_val_padrao,
+                    pp.nr_sequencia
+                    
+               from processo_param pp
+              where pp.cd_prcsso = prm_cd_processo
+              order by pp.nr_sequencia;
+      aux_item varchar2(4000);
+      aux_obrig varchar2(100) default '<span style="color:red;">*</span> ';
+    begin
+      htp.p('<table class="t-Report-report" style="width:100%; border-collapse:collapse;">');
+      for rec_param in cur_param loop
+        aux_item := null;
+        if rec_param.dm_componente = 'edt' then /* LineEdit */
+          aux_item := apex_item.text(p_idx        => 1,
+                                     p_item_id    => 'p'||rec_param.nr_sequencia,
+                                     p_value      => rec_param.ds_val_padrao,
+                                     p_size       => 50,
+                                     p_maxLength  => 45,
+                                     p_attributes => 'class="t-Form-input" style="width:100%"');
+        elsif rec_param.dm_componente = 'cmb' then /* ComboBox */
+          if rec_param.cd_dominio is not null then
+            aux_item := apex_item.select_list_from_query(p_idx        => 1,
+                                                         p_item_id    => 'p'||rec_param.nr_sequencia,
+                                                         p_value      => rec_param.ds_val_padrao,
+                                                         p_query      => k_dominio.f_sql_dm(rec_param.cd_dominio),
+                                                         p_show_null  => case rec_param.fg_obrigatorio
+                                                                           when 'S' then 'YES'
+                                                                           else 'NO'
+                                                                         end,
+                                                         p_attributes => 'style="width:100%"');
+          else
+            aux_item := apex_item.select_list_from_query(p_idx        => 1,
+                                                         p_item_id    => 'p'||rec_param.nr_sequencia,
+                                                         p_value      => rec_param.ds_val_padrao,
+                                                         p_query      => rec_param.ds_sql,
+                                                         p_show_null  => case rec_param.fg_obrigatorio
+                                                                           when 'S' then 'YES'
+                                                                           else 'NO'
+                                                                         end,
+                                                         p_attributes => 'style="width:100%"');
+          end if;
+        elsif rec_param.dm_componente = 'lov' then /* ListOfValues */
+          if rec_param.cd_dominio is not null then
+            aux_item := apex_item.popup_from_query(p_idx        => 1,
+                                                   p_item_id    => 'p'||rec_param.nr_sequencia,
+                                                   p_value      => rec_param.ds_val_padrao,
+                                                   p_lov_query  => k_dominio.f_sql_dm(rec_param.cd_dominio),
+                                                   p_attributes => 'style="width:calc(100% - 30px);"');
+          else
+            aux_item := apex_item.popup_from_query(p_idx        => 1,
+                                                   p_item_id    => 'p'||rec_param.nr_sequencia,
+                                                   p_value      => rec_param.ds_val_padrao,
+                                                   p_lov_query  => rec_param.ds_sql,
+                                                   p_attributes => 'style="width:calc(100% - 30px);"');
+          end if;
+        
+        end if;
+        htp.p('<tr>');
+        htp.p('<td style="padding:6px;"><label>' || 
+              case rec_param.fg_obrigatorio
+                when 'S' then aux_obrig
+                else ''
+              end ||
+              rec_param.ds_label || '</label></td>');
+        htp.p('<td style="padding:6px;">' || aux_item || '</td>');
+        htp.p('</tr>');
+        
+      end loop;
+      htp.p('</table>');
+    end;
+  
+  procedure p_gerar_processo_apex(prm_cd_prcsso  in  processo.cd_prcsso%type,
+                                  prm_dm_geracao in  geracao_prcsso.dm_geracao%type default 'I',
+                                  prm_cd_geracao out geracao_prcsso.nr_sequencia%type,
+                                  prm_ds_erro    out varchar2)
+    is
+    begin
+      p_salvar(prm_cd_prcsso        => prm_cd_prcsso,
+               prm_dt_geracao       => sysdate,
+               prm_cd_usuario       => f_buscar_usuario_ativo,
+               prm_dm_geracao       => prm_dm_geracao,
+               prm_cd_prcsso_origem => null,
+               prm_cd_geracao       => prm_cd_geracao);
+      
+      for aux_nr_prm in 1 .. apex_application.g_f01.count loop
+        p_salvar_param(prm_cd_geracao => prm_cd_geracao,
+                       prm_nr_seq_prm => aux_nr_prm,
+                       prm_ds_valor   => apex_application.g_f01(aux_nr_prm));
+      end loop;
+      
+      p_validar(prm_cd_geracao => prm_cd_geracao, prm_ds_erro => prm_ds_erro);
+      
+      if prm_ds_erro is not null then
+        rollback;
+        return;
+      end if;
+      
+      commit;
+      
+      p_processar(prm_cd_geracao => prm_cd_geracao, prm_dm_modo => prm_dm_geracao);
+      
+    exception
+      when others then
+        rollback;
+        prm_ds_erro := sqlerrm;
+    end;
+    
+  procedure p_download_arq_apex(prm_cd_arquivo geracao_prcsso_arq.nr_sequencia%type)
+    is
+      aux_ds_conteudo blob;
+      aux_bfile       bfile;
+      aux_mime        varchar2(255) := 'application/octet-stream';
+      aux_ds_arquivo  varchar2(256);
+      aux_cd_dir      varchar2(45);
+    begin 
+      select gpa.cd_dir_oracle,
+             gpa.ds_nome
+        into aux_cd_dir,
+             aux_ds_arquivo
+        from geracao_prcsso_arq gpa
+       where gpa.nr_sequencia = prm_cd_arquivo;
+       
+      -- 1. identify the file on the physical server
+      aux_bfile := bfilename(aux_cd_dir, aux_ds_arquivo);
+      
+      if dbms_lob.fileexists(aux_bfile) = 1 then
+        -- 2. open bfile and load it into a blob
+        dbms_lob.fileopen(aux_bfile, dbms_lob.file_readonly);
+        dbms_lob.createtemporary(aux_ds_conteudo, true);
+        dbms_lob.loadfromfile(aux_ds_conteudo, aux_bfile, dbms_lob.getlength(aux_bfile));
+        dbms_lob.fileclose(aux_bfile);
+
+        -- 3. set headers for download
+        sys.htp.init;
+        sys.owa_util.mime_header(aux_mime, false);
+        sys.htp.p('Content-length: ' || sys.dbms_lob.getlength(aux_ds_conteudo));
+        sys.htp.p('Content-Disposition: attachment; filename="' || aux_ds_arquivo || '"');
+        sys.owa_util.http_header_close;
+          
+        -- 4. download file
+        sys.wpg_docload.download_file(aux_ds_conteudo);
+          
+        -- 5. stop apex engine to prevent page rendering
+        apex_application.stop_apex_engine;
+      else
+        -- handle error: file not found
+        htp.p('File not found');
+      end if;
+    exception
+      when others then
+        raise;
+    end;
   
 end k_processo;
 /
