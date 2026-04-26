@@ -1,0 +1,221 @@
+create or replace package k_produto is
+
+  procedure p_salvar_prod(prm_cd_produto      in out produto.cd_produto%type,
+                          prm_ds_produto      produto.ds_produto%type,
+                          prm_cd_unid_compra  produto.cd_unid_compra%type,
+                          prm_cd_unid_venda   produto.cd_unid_venda%type,
+                          prm_cd_unid_estoque produto.cd_unid_estoque%type,
+                          prm_nr_peso         produto.nr_peso%type,
+                          prm_cd_unid_peso    produto.cd_unid_peso%type,
+                          prm_nr_largura      produto.nr_largura%type,
+                          prm_cd_unid_largura produto.cd_unid_largura%type,
+                          prm_nr_comprimento  produto.nr_comprimento%type,
+                          prm_cd_unid_comprim produto.cd_unid_comprim%type,
+                          prm_nr_altura       produto.nr_altura%type,
+                          prm_cd_unid_altura  produto.cd_unid_altura%type,
+                          prm_cd_marca        produto.cd_marca%type,
+                          prm_fg_situacao     produto.fg_situacao%type);
+  
+  procedure p_salvar_prod_fiscal(prm_cd_produto    produto_fiscal.cd_produto%type,
+                                 prm_nr_ncm        produto_fiscal.nr_ncm%type,
+                                 prm_nr_cest       produto_fiscal.nr_cest%type,
+                                 prm_dm_origem     produto_fiscal.dm_origem%type,
+                                 prm_ds_ean        produto_fiscal.ds_ean%type,
+                                 prm_ds_ean_trib   produto_fiscal.ds_ean_trib%type,
+                                 prm_cd_unid_trib  produto_fiscal.cd_unid_trib%type,
+                                 prm_nr_fator_conv produto_fiscal.nr_fator_conv%type);
+  
+  procedure p_salvar_prod_forn(prm_nr_sequencia  in out produto_fornecedor.nr_sequencia%type,
+                               prm_cd_produto    produto_fornecedor.cd_produto%type,
+                               prm_cd_pessoa     produto_fornecedor.cd_pessoa%type,
+                               prm_ds_codigo     produto_fornecedor.ds_codigo%type,
+                               prm_cd_unid_conv  produto_fornecedor.cd_unid_conv%type,
+                               prm_nr_fator_conv produto_fornecedor.nr_fator_conv%type);
+                               
+  procedure p_salvar_prod_forn(prm_nr_sequencia  in out produto_fornecedor.nr_sequencia%type,
+                               prm_cd_produto    produto_fornecedor.cd_produto%type,
+                               prm_cd_pessoa     produto_fornecedor.cd_pessoa%type,
+                               prm_ds_codigo     produto_fornecedor.ds_codigo%type,
+                               prm_cd_unid_conv  produto_fornecedor.cd_unid_conv%type,
+                               prm_nr_fator_conv produto_fornecedor.nr_fator_conv%type,
+                               prm_dm_status     varchar2);
+                               
+
+end k_produto;
+/
+create or replace package body k_produto is
+
+  procedure p_salvar_prod(prm_cd_produto      in out produto.cd_produto%type,
+                          prm_ds_produto      produto.ds_produto%type,
+                          prm_cd_unid_compra  produto.cd_unid_compra%type,
+                          prm_cd_unid_venda   produto.cd_unid_venda%type,
+                          prm_cd_unid_estoque produto.cd_unid_estoque%type,
+                          prm_nr_peso         produto.nr_peso%type,
+                          prm_cd_unid_peso    produto.cd_unid_peso%type,
+                          prm_nr_largura      produto.nr_largura%type,
+                          prm_cd_unid_largura produto.cd_unid_largura%type,
+                          prm_nr_comprimento  produto.nr_comprimento%type,
+                          prm_cd_unid_comprim produto.cd_unid_comprim%type,
+                          prm_nr_altura       produto.nr_altura%type,
+                          prm_cd_unid_altura  produto.cd_unid_altura%type,
+                          prm_cd_marca        produto.cd_marca%type,
+                          prm_fg_situacao     produto.fg_situacao%type)
+    is
+    begin
+      if prm_cd_produto is null then
+        insert
+          into produto(ds_produto,
+                       cd_unid_compra,
+                       cd_unid_venda,
+                       cd_unid_estoque,
+                       nr_peso,
+                       cd_unid_peso,
+                       nr_largura,
+                       cd_unid_largura,
+                       nr_comprimento,
+                       cd_unid_comprim,
+                       nr_altura,
+                       cd_unid_altura,
+                       cd_marca,
+                       fg_situacao)
+        values(prm_ds_produto,
+               prm_cd_unid_compra,
+               prm_cd_unid_venda,
+               prm_cd_unid_estoque,
+               prm_nr_peso,
+               prm_cd_unid_peso,
+               prm_nr_largura,
+               prm_cd_unid_largura,
+               prm_nr_comprimento,
+               prm_cd_unid_comprim,
+               prm_nr_altura,
+               prm_cd_unid_altura,
+               prm_cd_marca,
+               prm_fg_situacao)
+        returning cd_produto
+             into prm_cd_produto;
+      else
+        update produto p
+           set p.ds_produto      = prm_ds_produto,
+               p.cd_unid_compra  = prm_cd_unid_compra,
+               p.cd_unid_venda   = prm_cd_unid_venda,
+               p.cd_unid_estoque = prm_cd_unid_estoque,
+               p.nr_peso         = prm_nr_peso,
+               p.cd_unid_peso    = prm_cd_unid_peso,
+               p.nr_largura      = prm_nr_largura,
+               p.cd_unid_largura = prm_cd_unid_largura,
+               p.nr_comprimento  = prm_nr_comprimento,
+               p.cd_unid_comprim = prm_cd_unid_comprim,
+               p.nr_altura       = prm_nr_altura,
+               p.cd_unid_altura  = prm_cd_unid_altura,
+               p.cd_marca        = prm_cd_marca,
+               p.fg_situacao     = prm_fg_situacao
+         where cd_produto = prm_cd_produto;
+      end if;
+      
+    end p_salvar_prod;
+  
+  procedure p_salvar_prod_fiscal(prm_cd_produto    produto_fiscal.cd_produto%type,
+                                 prm_nr_ncm        produto_fiscal.nr_ncm%type,
+                                 prm_nr_cest       produto_fiscal.nr_cest%type,
+                                 prm_dm_origem     produto_fiscal.dm_origem%type,
+                                 prm_ds_ean        produto_fiscal.ds_ean%type,
+                                 prm_ds_ean_trib   produto_fiscal.ds_ean_trib%type,
+                                 prm_cd_unid_trib  produto_fiscal.cd_unid_trib%type,
+                                 prm_nr_fator_conv produto_fiscal.nr_fator_conv%type)
+  is
+  begin
+    update produto_fiscal pf
+       set pf.nr_ncm        = prm_nr_ncm,
+           pf.nr_cest       = prm_nr_cest,
+           pf.dm_origem     = prm_dm_origem,
+           pf.ds_ean        = prm_ds_ean,
+           pf.ds_ean_trib   = prm_ds_ean_trib,
+           pf.cd_unid_trib  = prm_cd_unid_trib,
+           pf.nr_fator_conv = prm_nr_fator_conv
+     where pf.cd_produto = prm_cd_produto;
+    
+    if sql%rowcount = 0 then
+      insert
+        into produto_fiscal
+            (cd_produto,
+             nr_ncm,
+             nr_cest,
+             dm_origem,
+             ds_ean,
+             ds_ean_trib,
+             cd_unid_trib,
+             nr_fator_conv)
+      values(prm_cd_produto,
+             prm_nr_ncm,
+             prm_nr_cest,
+             prm_dm_origem,
+             prm_ds_ean,
+             prm_ds_ean_trib,
+             prm_cd_unid_trib,
+             prm_nr_fator_conv);
+    end if;
+  end p_salvar_prod_fiscal;
+  
+  procedure p_salvar_prod_forn(prm_nr_sequencia  in out produto_fornecedor.nr_sequencia%type,
+                               prm_cd_produto    produto_fornecedor.cd_produto%type,
+                               prm_cd_pessoa     produto_fornecedor.cd_pessoa%type,
+                               prm_ds_codigo     produto_fornecedor.ds_codigo%type,
+                               prm_cd_unid_conv  produto_fornecedor.cd_unid_conv%type,
+                               prm_nr_fator_conv produto_fornecedor.nr_fator_conv%type)
+    is
+    begin
+      if prm_nr_sequencia is null then
+        insert
+          into produto_fornecedor
+              (cd_produto,
+               cd_pessoa,
+               ds_codigo,
+               cd_unid_conv,
+               nr_fator_conv)
+        values(prm_cd_produto,
+               prm_cd_pessoa,
+               prm_ds_codigo,
+               prm_cd_unid_conv,
+               prm_nr_fator_conv)
+        returning nr_sequencia
+             into prm_nr_sequencia;
+      else
+        update produto_fornecedor pf
+           set pf.cd_produto    = prm_cd_produto,
+               pf.cd_pessoa     = prm_cd_pessoa,
+               pf.ds_codigo     = prm_ds_codigo,
+               pf.cd_unid_conv  = prm_cd_unid_conv,
+               pf.nr_fator_conv = prm_nr_fator_conv
+         where pf.nr_sequencia = prm_nr_sequencia;
+      end if;
+    end p_salvar_prod_forn;
+  
+  procedure p_salvar_prod_forn(prm_nr_sequencia  in out produto_fornecedor.nr_sequencia%type,
+                               prm_cd_produto    produto_fornecedor.cd_produto%type,
+                               prm_cd_pessoa     produto_fornecedor.cd_pessoa%type,
+                               prm_ds_codigo     produto_fornecedor.ds_codigo%type,
+                               prm_cd_unid_conv  produto_fornecedor.cd_unid_conv%type,
+                               prm_nr_fator_conv produto_fornecedor.nr_fator_conv%type,
+                               prm_dm_status     varchar2)
+    is
+    begin
+      if prm_dm_status = 'D' then
+        delete
+          from produto_fornecedor pf
+         where pf.nr_sequencia = prm_nr_sequencia;
+        prm_nr_sequencia := null;
+      else
+        p_salvar_prod_forn(prm_nr_sequencia  => prm_nr_sequencia,
+                           prm_cd_produto    => prm_cd_produto,
+                           prm_cd_pessoa     => prm_cd_pessoa,
+                           prm_ds_codigo     => prm_ds_codigo,
+                           prm_cd_unid_conv  => prm_cd_unid_conv,
+                           prm_nr_fator_conv => prm_nr_fator_conv);
+      end if;
+    end p_salvar_prod_forn;
+  
+  
+                                   
+end k_produto;
+/
