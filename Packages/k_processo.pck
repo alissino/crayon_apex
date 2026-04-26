@@ -1,4 +1,4 @@
-create or replace package k_processo 
+create or replace package k_processo
 is
   e_validacao exception;
   subtype typ_ds_erro is varchar2(4000);
@@ -19,7 +19,7 @@ is
   
   -- Realiza o processamento
   procedure p_processar(prm_cd_geracao in geracao_prcsso.nr_sequencia%type,
-                        prm_dm_modo    in char default 'I');
+                        prm_dm_geracao in geracao_prcsso.dm_geracao%type default null);
   
   -- Busca o valor do parâmetro
   procedure p_buscar_prm(prm_cd_geracao   in  geracao_prcsso_prm.nr_seq_geracao%type,
@@ -58,7 +58,8 @@ is
                              prm_cd_arquivo geracao_prcsso_arq.cd_arquivo%type);
   
   /* APEX */
-  procedure p_montar_tela(prm_cd_processo processo.cd_prcsso%type);
+  procedure p_montar_tela(prm_cd_processo processo.cd_prcsso%type,
+                          prm_ds_params   varchar2 default null);
   
   procedure p_gerar_processo_apex(prm_cd_prcsso  in  processo.cd_prcsso%type,
                                   prm_dm_geracao in  geracao_prcsso.dm_geracao%type default 'I',
@@ -70,7 +71,7 @@ is
 
 end k_processo;
 /
-create or replace package body k_processo 
+create or replace package body k_processo
 is
   aux_cd_prcsso geracao_prcsso.nr_sequencia%type;
   
@@ -158,21 +159,24 @@ is
     end p_salvar_param;
   
   procedure p_processar(prm_cd_geracao in geracao_prcsso.nr_sequencia%type,
-                        prm_dm_modo    in char default 'I')
+                        prm_dm_geracao in geracao_prcsso.dm_geracao%type default null)
     is
       aux_ds_sql    varchar2(4000);
       aux_cd_rotina processo.cd_rotina%type;
       aux_ds_job    varchar(26);
       aux_dt_prcsso date;
+      aux_dm_modo   geracao_prcsso.dm_geracao%type;
     begin
-      select p.cd_rotina
-        into aux_cd_rotina
+      select p.cd_rotina,
+             gp.dm_geracao
+        into aux_cd_rotina,
+             aux_dm_modo
         from processo       p,
              geracao_prcsso gp
        where gp.cd_prcsso    = p.cd_prcsso
          and gp.nr_sequencia = prm_cd_geracao;
       
-      if prm_dm_modo = 'I' then
+      if nvl(prm_dm_geracao, aux_dm_modo) = 'I' then
         p_definir_prcsso(prm_cd_geracao);
         p_inicio;
         begin
@@ -252,7 +256,7 @@ is
       aux_rg_erro.nr_sequencia   := s_grc_prcsso_err.nextval;
       aux_rg_erro.nr_seq_geracao := prm_cd_geracao;
       aux_rg_erro.dt_erro        := sysdate;
-      aux_rg_erro.ds_erro        := substr(prm_ds_erro, 1, 4000);
+      aux_rg_erro.ds_erro        := prm_ds_erro;
       aux_rg_erro.cd_usuario     := f_buscar_usuario_ativo;
       
       insert 
@@ -303,7 +307,7 @@ is
       aux_vt_params k_lista.typ_lista;
     begin
       -- Cria a lista de parâmtros
-      k_lista.p_criar_lista(prm_ds_params, aux_vt_params, cns_ds_sep);
+      k_lista.p_criar_lista(prm_ds_params, aux_vt_params, cns_ds_sep, false);
       -- Cria a geração
       p_salvar(prm_cd_prcsso        => prm_cd_prcsso,
                prm_dt_geracao       => sysdate,
@@ -401,7 +405,8 @@ is
       
     end;
   
-  procedure p_montar_tela(prm_cd_processo processo.cd_prcsso%type)
+  procedure p_montar_tela(prm_cd_processo processo.cd_prcsso%type,
+                          prm_ds_params   varchar2 default null)
     is
       cursor cur_param
           is select pp.dm_componente,
@@ -416,16 +421,43 @@ is
                from processo_param pp
               where pp.cd_prcsso = prm_cd_processo
               order by pp.nr_sequencia;
-      aux_item varchar2(4000);
-      aux_obrig varchar2(100) default '<span style="color:red;">*</span> ';
+      aux_item      varchar2(4000);
+      aux_obrig     varchar2(100) default '<span style="color:red;">*</span> ';
+      aux_vt_params k_lista.typ_lista := k_lista.typ_lista();
+      
+      function f_valor_prm(prm_nr_prm number,
+                           prm_ds_pdr varchar2)
+        return varchar2
+        is
+        begin
+          if aux_vt_params.exists(prm_nr_prm) then
+            if aux_vt_params(prm_nr_prm) is not null then
+               return aux_vt_params(prm_nr_prm);
+            end if;
+            return prm_ds_pdr;
+          end if;
+          return prm_ds_pdr;
+        exception
+          when others then
+            return prm_ds_pdr;
+        end f_valor_prm;
+      
     begin
+      
+      if prm_ds_params is not null then
+        k_lista.p_criar_lista(prm_ds_string    => prm_ds_params,
+                              prm_vt_lista     => aux_vt_params,
+                              prm_ds_separador => k_processo.cns_ds_sep,
+                              prm_vf_trim      => false);
+      end if;
+    
       htp.p('<table class="t-Report-report" style="width:100%; border-collapse:collapse;">');
       for rec_param in cur_param loop
         aux_item := null;
         if rec_param.dm_componente = 'edt' then /* LineEdit */
           aux_item := apex_item.text(p_idx        => 1,
                                      p_item_id    => 'p'||rec_param.nr_sequencia,
-                                     p_value      => rec_param.ds_val_padrao,
+                                     p_value      => f_valor_prm(rec_param.nr_sequencia, rec_param.ds_val_padrao),
                                      p_size       => 50,
                                      p_maxLength  => 45,
                                      p_attributes => 'class="t-Form-input" style="width:100%"');
@@ -433,7 +465,7 @@ is
           if rec_param.cd_dominio is not null then
             aux_item := apex_item.select_list_from_query(p_idx        => 1,
                                                          p_item_id    => 'p'||rec_param.nr_sequencia,
-                                                         p_value      => rec_param.ds_val_padrao,
+                                                         p_value      => f_valor_prm(rec_param.nr_sequencia, rec_param.ds_val_padrao),
                                                          p_query      => k_dominio.f_sql_dm(rec_param.cd_dominio),
                                                          p_show_null  => case rec_param.fg_obrigatorio
                                                                            when 'S' then 'YES'
@@ -443,7 +475,7 @@ is
           else
             aux_item := apex_item.select_list_from_query(p_idx        => 1,
                                                          p_item_id    => 'p'||rec_param.nr_sequencia,
-                                                         p_value      => rec_param.ds_val_padrao,
+                                                         p_value      => f_valor_prm(rec_param.nr_sequencia, rec_param.ds_val_padrao),
                                                          p_query      => rec_param.ds_sql,
                                                          p_show_null  => case rec_param.fg_obrigatorio
                                                                            when 'S' then 'YES'
@@ -455,13 +487,13 @@ is
           if rec_param.cd_dominio is not null then
             aux_item := apex_item.popup_from_query(p_idx        => 1,
                                                    p_item_id    => 'p'||rec_param.nr_sequencia,
-                                                   p_value      => rec_param.ds_val_padrao,
+                                                   p_value      => f_valor_prm(rec_param.nr_sequencia, rec_param.ds_val_padrao),
                                                    p_lov_query  => k_dominio.f_sql_dm(rec_param.cd_dominio),
                                                    p_attributes => 'style="width:calc(100% - 30px);"');
           else
             aux_item := apex_item.popup_from_query(p_idx        => 1,
                                                    p_item_id    => 'p'||rec_param.nr_sequencia,
-                                                   p_value      => rec_param.ds_val_padrao,
+                                                   p_value      => f_valor_prm(rec_param.nr_sequencia, rec_param.ds_val_padrao),
                                                    p_lov_query  => rec_param.ds_sql,
                                                    p_attributes => 'style="width:calc(100% - 30px);"');
           end if;
@@ -509,7 +541,11 @@ is
       
       commit;
       
-      p_processar(prm_cd_geracao => prm_cd_geracao, prm_dm_modo => prm_dm_geracao);
+      p_processar(prm_cd_geracao => prm_cd_geracao);
+      
+      if prm_dm_geracao <> 'I' then
+        apex_application.g_print_success_message := 'Processo '||prm_cd_geracao||' está sendo executado. Verifique a fila de processos!';
+      end if;
       
     exception
       when others then
