@@ -1,0 +1,15 @@
+create or replace trigger trg_relatorio_bd
+  after delete
+  on relatorio 
+  for each row
+declare
+  -- local variables here
+begin
+  delete
+    from processo p
+   where p.cd_prcsso = :old.cd_processo;
+exception
+  when others then
+    null;
+end trg_relatorio_bd;
+/

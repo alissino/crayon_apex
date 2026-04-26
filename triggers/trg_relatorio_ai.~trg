@@ -1,0 +1,12 @@
+create or replace trigger trg_relatorio_bi
+  before insert
+  on relatorio 
+  for each row
+declare
+  -- local variables here
+begin
+  k_relatorio.p_criar_prcsso_rel(prm_cd_relatorio => :new.cd_relatorio,
+                                 prm_ds_nome_rel  => :new.,
+                                 prm_cd_processo  => );
+end trg_relatorio_bi;
+/
