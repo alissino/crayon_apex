@@ -99,7 +99,7 @@ create or replace package body k_audit is
       else
         for tab in (select u.table_name
                       from user_tables u
-                     where u.table_name not in (select column_value
+                     where u.table_name not in (select upper(column_value)
                                                   from table(k_parametro.f_valor_lista_pipe('tabelas_nao_gerar_trg_audit'))))
         loop
           k_processo.p_processar_agora(prm_cd_prcsso     => 'gerar_trigger_audit_tab',

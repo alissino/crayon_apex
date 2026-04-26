@@ -91,7 +91,7 @@ create or replace package body k_audit is
         for i in 1 .. aux_vt_tabelas.count loop
           k_processo.p_processar_agora(prm_cd_prcsso     => 'gerar_trigger_audit_tab',
                                        prm_cd_prcsso_ori => prm_cd_geracao,
-                                       prm_ds_params     => aux_vt_tabelas(i)||k_lista.cns_ds_sep,
+                                       prm_ds_params     => aux_vt_tabelas(i),
                                        prm_cd_geracao    => aux_cd_geracao,
                                        prm_vf_erro       => aux_bl_erro);
         end loop;
