@@ -1,0 +1,8 @@
+create or replace function f_buscar_estab_ativo
+return e
+is
+begin
+  
+  return(FunctionResult);
+end f_buscar_estab_ativo;
+/
