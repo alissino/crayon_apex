@@ -8,6 +8,22 @@ create or replace package k_pessoa is
                         prm_vf_mask      boolean default false)
     return pessoa_documento.ds_documento%type;
   
+  procedure p_buscar_endereco(prm_cd_pessoa      in pessoa.cd_pessoa%type,
+                              prm_nr_endereco    in pessoa_endereco.nr_sequencia%type default null,
+                              prm_cd_pais        out pessoa_endereco.cd_pais%type,
+                              prm_cd_estado      out pessoa_endereco.cd_estado%type,
+                              prm_cd_cidade      out pessoa_endereco.cd_cidade%type,
+                              prm_nr_cep         out pessoa_endereco.nr_cep%type,
+                              prm_ds_logradouro  out pessoa_endereco.ds_logradouro%type,
+                              prm_ds_bairro      out pessoa_endereco.ds_bairro%type,
+                              prm_ds_numero      out pessoa_endereco.ds_numero%type,
+                              prm_ds_complemento out pessoa_endereco.ds_complemento%type);
+  
+  function f_buscar_end(prm_cd_pessoa    pessoa.cd_pessoa%type,
+                        prm_nr_sequencia pessoa_endereco.nr_sequencia%type default null,
+                        prm_ds_opcao     varchar2)
+    return varchar2;
+  
   procedure p_salvar(prm_cd_pessoa       in out pessoa.cd_pessoa%type,
                      prm_dm_tipo         in pessoa.dm_tipo%type,
                      prm_ds_nome         in pessoa.ds_nome%type,
@@ -113,6 +129,107 @@ create or replace package body k_pessoa is
       when others then
         raise;
     end;
+  
+  procedure p_buscar_endereco(prm_cd_pessoa      in pessoa.cd_pessoa%type,
+                              prm_nr_endereco    in pessoa_endereco.nr_sequencia%type default null,
+                              prm_cd_pais        out pessoa_endereco.cd_pais%type,
+                              prm_cd_estado      out pessoa_endereco.cd_estado%type,
+                              prm_cd_cidade      out pessoa_endereco.cd_cidade%type,
+                              prm_nr_cep         out pessoa_endereco.nr_cep%type,
+                              prm_ds_logradouro  out pessoa_endereco.ds_logradouro%type,
+                              prm_ds_bairro      out pessoa_endereco.ds_bairro%type,
+                              prm_ds_numero      out pessoa_endereco.ds_numero%type,
+                              prm_ds_complemento out pessoa_endereco.ds_complemento%type)
+    is
+      aux_nr_seq pessoa_endereco.nr_sequencia%type;
+    begin
+      if prm_nr_endereco is null then
+        select min(pe.nr_sequencia)
+          into aux_nr_seq
+          from pessoa_endereco pe
+         where pe.cd_pessoa   = prm_cd_pessoa
+           and pe.dm_situacao = 'A';
+      else
+        aux_nr_seq := prm_nr_endereco;
+      end if;
+      
+      select pe.cd_pais,
+             pe.cd_estado,
+             pe.cd_cidade,
+             pe.nr_cep,
+             pe.ds_logradouro,
+             pe.ds_bairro,
+             pe.ds_numero,
+             pe.ds_complemento
+        into prm_cd_pais,
+             prm_cd_estado,
+             prm_cd_cidade,
+             prm_nr_cep,
+             prm_ds_logradouro,
+             prm_ds_bairro,
+             prm_ds_numero,
+             prm_ds_complemento
+        from pessoa_endereco pe
+       where pe.nr_sequencia = aux_nr_seq
+         and pe.cd_pessoa    = prm_cd_pessoa;
+         
+    exception
+      when no_data_found then
+        return;
+    end;
+  
+  function f_buscar_end(prm_cd_pessoa    pessoa.cd_pessoa%type,
+                        prm_nr_sequencia pessoa_endereco.nr_sequencia%type default null,
+                        prm_ds_opcao     varchar2)
+    return varchar2
+    is
+      /*
+      prm_ds_opcao
+      CD_PAIS   -> Código do pais
+      PAIS      -> Nome do país
+      CD_ESTADO -> Cód IBGE do estado
+      UF        -> Sigla do estado
+      ESTADO    -> Nome do estado
+      CD_CIDADE -> Cód IBGE da cidade
+      CIDADE    -> Nome da cidade
+      CEP       -> Cep
+      LOGRAD    -> Logradouro
+      BAIRRO    -> Bairro
+      NUM       -> Número
+      COMPL     -> Complemento
+      */
+      aux_ds_retorno     varchar2(256);
+      aux_cd_pais        pessoa_endereco.cd_pais%type;
+      aux_cd_estado      pessoa_endereco.cd_estado%type;
+      aux_cd_cidade      pessoa_endereco.cd_cidade%type;
+      aux_nr_cep         pessoa_endereco.nr_cep%type;
+      aux_ds_logradouro  pessoa_endereco.ds_logradouro%type;
+      aux_ds_bairro      pessoa_endereco.ds_bairro%type;
+      aux_ds_numero      pessoa_endereco.ds_numero%type;
+      aux_ds_complemento pessoa_endereco.ds_complemento%type;
+    begin
+      p_buscar_endereco(prm_cd_pessoa      => prm_cd_pessoa,
+                        prm_nr_endereco    => prm_nr_sequencia,
+                        prm_cd_pais        => aux_cd_pais,
+                        prm_cd_estado      => aux_cd_estado,
+                        prm_cd_cidade      => aux_cd_cidade,
+                        prm_nr_cep         => aux_nr_cep,
+                        prm_ds_logradouro  => aux_ds_logradouro,
+                        prm_ds_bairro      => aux_ds_bairro,
+                        prm_ds_numero      => aux_ds_numero,
+                        prm_ds_complemento => aux_ds_complemento);
+      
+      if prm_ds_opcao = 'CD_PAIS' then
+        return aux_cd_pais;
+      elsif prm_ds_opcao = 'PAIS' then
+        select p.ds_pais
+          into aux_ds_retorno
+          from pais p
+         where p.cd_pais = aux_cd_pais;
+        return aux_ds_retorno;
+      end if;
+      return null;
+    end f_buscar_end;
     
   procedure p_salvar(prm_cd_pessoa       in out pessoa.cd_pessoa%type,
                      prm_dm_tipo         in pessoa.dm_tipo%type,
