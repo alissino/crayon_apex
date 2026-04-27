@@ -1,0 +1,11 @@
+﻿create table NCM
+(
+  cd_ncm       VARCHAR2(10) not null,
+  ds_descricao VARCHAR2(4000) not null,
+  dt_inicio    DATE not null,
+  dt_termino   DATE
+)
+;
+alter table NCM
+  add constraint PK_NCM primary key (CD_NCM);
+

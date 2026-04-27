@@ -1,0 +1,16 @@
+﻿create table NOTA_FISCAL_ITEM_PIS
+(
+  cd_nf_item      NUMBER not null,
+  dm_cst_pis      VARCHAR2(3),
+  vl_base_calc    NUMBER(15,4),
+  vl_aliquota     NUMBER(10,4),
+  vl_pis          NUMBER(15,4),
+  cd_regra_fiscal NUMBER
+)
+;
+alter table NOTA_FISCAL_ITEM_PIS
+  add constraint PK_NFITMPIS primary key (CD_NF_ITEM);
+alter table NOTA_FISCAL_ITEM_PIS
+  add constraint FK_NFITMPIS_REGFISC foreign key (CD_REGRA_FISCAL)
+  references REGRA_FISCAL (NR_SEQUENCIA) on delete set null;
+

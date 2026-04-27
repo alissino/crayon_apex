@@ -1,0 +1,19 @@
+﻿create table DOMINIO_RELACIONAMENTO
+(
+  cd_dm_relac     NUMBER not null,
+  cd_dominio      VARCHAR2(45) not null,
+  cd_objeto       VARCHAR2(62) not null,
+  cd_atributo     VARCHAR2(62) not null,
+  ds_valor_padrao VARCHAR2(256)
+)
+;
+create index DOMINIO_RELACIONAMENTO_CD_DOMINIO_IDX on DOMINIO_RELACIONAMENTO (CD_DOMINIO);
+create index DOMINIO_RELACIONAMENTO_IDX on DOMINIO_RELACIONAMENTO (CD_OBJETO, CD_ATRIBUTO);
+alter table DOMINIO_RELACIONAMENTO
+  add constraint DOMINIO_RELACIONAMENTO_PK primary key (CD_DM_RELAC);
+alter table DOMINIO_RELACIONAMENTO
+  add constraint DOMINIO_RELACIONAMENTO_UQ unique (CD_DOMINIO, CD_OBJETO, CD_ATRIBUTO);
+alter table DOMINIO_RELACIONAMENTO
+  add constraint FK_DMRELAC_DOM foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO) on delete cascade;
+

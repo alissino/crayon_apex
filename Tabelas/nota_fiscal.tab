@@ -1,0 +1,29 @@
+﻿create table NOTA_FISCAL
+(
+  cd_nota            NUMBER(20) default crayon.s_nota_fiscal.nextval not null,
+  cd_estab           NUMBER not null,
+  cd_pessoa          NUMBER,
+  nr_numero          NUMBER,
+  nr_serie           NUMBER,
+  dt_emissao         DATE default sysdate,
+  dt_saida           DATE,
+  cd_cfop            VARCHAR2(4),
+  dm_tipo_operacao   CHAR(1),
+  dm_status          VARCHAR2(2),
+  ds_chave_acesso    VARCHAR2(44),
+  ds_protocolo_autor VARCHAR2(50),
+  vl_produtos        NUMBER(15,4),
+  vl_nota            NUMBER(15,4)
+)
+;
+alter table NOTA_FISCAL
+  add constraint PK_NF primary key (CD_NOTA);
+alter table NOTA_FISCAL
+  add constraint UQ_NF unique (CD_ESTAB, NR_NUMERO, NR_SERIE);
+alter table NOTA_FISCAL
+  add constraint FK_NF_EMPESTAB foreign key (CD_ESTAB)
+  references EMPRESA_ESTABELECIMENTO (CD_ESTAB);
+alter table NOTA_FISCAL
+  add constraint FK_NF_PESSOA foreign key (CD_PESSOA)
+  references PESSOA (CD_PESSOA);
+

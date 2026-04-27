@@ -1,0 +1,14 @@
+﻿create table EMPRESA
+(
+  cd_empresa  NUMBER not null,
+  cd_pessoa   NUMBER not null,
+  dt_cadastro DATE default sysdate not null,
+  dm_situacao CHAR(1) default 'A' not null
+)
+;
+alter table EMPRESA
+  add constraint PK_EMPRESA primary key (CD_EMPRESA);
+alter table EMPRESA
+  add constraint FK_EMPRESA_PESSOA foreign key (CD_PESSOA)
+  references PESSOA (CD_PESSOA);
+

@@ -1,0 +1,13 @@
+﻿create table EMPRESA_ESTAB_SEQ_NF
+(
+  cd_estab       NUMBER not null,
+  nr_serie       NUMBER not null,
+  nr_prox_numero NUMBER not null
+)
+;
+alter table EMPRESA_ESTAB_SEQ_NF
+  add constraint PK_EMPESTSNF primary key (CD_ESTAB, NR_SERIE);
+alter table EMPRESA_ESTAB_SEQ_NF
+  add constraint FK_EMPESTSNF_EMPESTAB foreign key (CD_ESTAB)
+  references EMPRESA_ESTABELECIMENTO (CD_ESTAB);
+

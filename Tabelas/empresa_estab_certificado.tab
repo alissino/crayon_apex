@@ -1,0 +1,15 @@
+﻿create table EMPRESA_ESTAB_CERTIFICADO
+(
+  nr_sequencia NUMBER not null,
+  cd_estab     NUMBER not null,
+  ds_arquivo   BLOB,
+  ds_senha     VARCHAR2(45) not null,
+  dt_validade  DATE not null
+)
+;
+alter table EMPRESA_ESTAB_CERTIFICADO
+  add constraint PK_EMPESTCERT primary key (NR_SEQUENCIA);
+alter table EMPRESA_ESTAB_CERTIFICADO
+  add constraint FK_EMPESTCERT_EMPESTAB foreign key (CD_ESTAB)
+  references EMPRESA_ESTABELECIMENTO (CD_ESTAB);
+

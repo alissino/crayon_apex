@@ -1,0 +1,11 @@
+﻿create table XML
+(
+  cd_xml       NUMBER generated always as identity (nocache order),
+  ds_nome      VARCHAR2(45),
+  ds_cabecalho VARCHAR2(4000),
+  ds_sql       VARCHAR2(4000)
+)
+;
+alter table XML
+  add constraint XML_PK primary key (CD_XML);
+

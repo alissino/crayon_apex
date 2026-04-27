@@ -1,0 +1,16 @@
+﻿create table RELATORIO_PAGINA
+(
+  nr_sequencia   NUMBER generated always as identity (nocache),
+  cd_relatorio   NUMBER not null,
+  cd_pagina      NUMBER not null,
+  dm_situacao    CHAR(1) not null,
+  dm_solic_param CHAR(1) not null,
+  nr_ordem       NUMBER not null
+)
+;
+alter table RELATORIO_PAGINA
+  add constraint PK_RELATPAG primary key (NR_SEQUENCIA);
+alter table RELATORIO_PAGINA
+  add constraint FK_RELATPAG_RELATORIO foreign key (CD_RELATORIO)
+  references RELATORIO (CD_RELATORIO) on delete cascade;
+

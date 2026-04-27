@@ -1,0 +1,22 @@
+﻿create table PROCESSO_PARAM
+(
+  cd_prcsso      VARCHAR2(45) not null,
+  nr_sequencia   NUMBER not null,
+  dm_componente  VARCHAR2(3) not null,
+  ds_label       VARCHAR2(45) not null,
+  fg_obrigatorio CHAR(1) default 'N' not null,
+  ds_sql         VARCHAR2(4000),
+  ds_mascara     VARCHAR2(45),
+  ds_val_padrao  VARCHAR2(255),
+  cd_dominio     VARCHAR2(45)
+)
+;
+alter table PROCESSO_PARAM
+  add constraint PK_PRCSSO_PRM primary key (CD_PRCSSO, NR_SEQUENCIA);
+alter table PROCESSO_PARAM
+  add constraint FK_PRCSSOPRM_DOMINIO foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO);
+alter table PROCESSO_PARAM
+  add constraint FK_PRCSSOPRM_PRCSSO foreign key (CD_PRCSSO)
+  references PROCESSO (CD_PRCSSO) on delete cascade;
+

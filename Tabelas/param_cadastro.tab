@@ -1,0 +1,11 @@
+﻿create table PARAM_CADASTRO
+(
+  cd_param_cad  VARCHAR2(45) not null,
+  ds_param_cad  VARCHAR2(256) not null,
+  ds_observacao VARCHAR2(1000),
+  cd_tabela     VARCHAR2(45) not null
+)
+;
+alter table PARAM_CADASTRO
+  add constraint PK_PRMCAD primary key (CD_PARAM_CAD);
+

@@ -1,0 +1,23 @@
+﻿create table LISTAGEM_FILTRO
+(
+  cd_listagem    VARCHAR2(45) not null,
+  cd_filtro      VARCHAR2(45) not null,
+  ds_filtro      VARCHAR2(100) not null,
+  dm_campo       CHAR(3) not null,
+  ds_sql         VARCHAR2(4000),
+  cd_dominio     VARCHAR2(45),
+  fg_obrigatorio CHAR(1) default 'N' not null,
+  nr_ordem       NUMBER not null,
+  nr_linha       NUMBER,
+  nr_coluna      NUMBER
+)
+;
+alter table LISTAGEM_FILTRO
+  add constraint PK_LISTAGEM_FILTRO primary key (CD_LISTAGEM, CD_FILTRO);
+alter table LISTAGEM_FILTRO
+  add constraint FK_LISTAGEM_FILTRO_DOMINIO foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO);
+alter table LISTAGEM_FILTRO
+  add constraint FK_LISTAGEM_FILTRO_LISTAGEM foreign key (CD_LISTAGEM)
+  references LISTAGEM (CD_LISTAGEM) on delete cascade;
+

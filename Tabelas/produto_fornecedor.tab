@@ -1,0 +1,21 @@
+﻿create table PRODUTO_FORNECEDOR
+(
+  nr_sequencia   NUMBER generated always as identity (nocache),
+  cd_produto     NUMBER not null,
+  cd_pessoa      NUMBER not null,
+  ds_codigo      VARCHAR2(20),
+  cd_unid_conv   VARCHAR2(3),
+  vl_ultim_compr NUMBER(15,4),
+  dt_ultim_compr DATE,
+  nr_fator_conv  NUMBER(15,4)
+)
+;
+alter table PRODUTO_FORNECEDOR
+  add constraint PK_PRODFORN primary key (NR_SEQUENCIA);
+alter table PRODUTO_FORNECEDOR
+  add constraint FK_PRODFORN_PESSOA foreign key (CD_PESSOA)
+  references PESSOA (CD_PESSOA) on delete cascade;
+alter table PRODUTO_FORNECEDOR
+  add constraint FK_PRODFORN_PRODUTO foreign key (CD_PRODUTO)
+  references PRODUTO (CD_PRODUTO) on delete cascade;
+

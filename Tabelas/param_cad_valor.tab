@@ -1,0 +1,19 @@
+﻿create table PARAM_CAD_VALOR
+(
+  cd_param_cad     VARCHAR2(45) not null,
+  nr_param_cad_val NUMBER not null,
+  ds_parametro     VARCHAR2(45) not null,
+  ds_valor         VARCHAR2(45),
+  dm_tipo          CHAR(2) not null,
+  cd_dominio       VARCHAR2(45),
+  ds_val_padrao    VARCHAR2(45),
+  ds_lista_opcoes  VARCHAR2(256),
+  ds_sql           VARCHAR2(4000)
+)
+;
+alter table PARAM_CAD_VALOR
+  add constraint PK_PRMCADVAL primary key (CD_PARAM_CAD, NR_PARAM_CAD_VAL);
+alter table PARAM_CAD_VALOR
+  add constraint FK_PRMCADVAL_DOMINIO foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO);
+

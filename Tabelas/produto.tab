@@ -1,0 +1,23 @@
+﻿create table PRODUTO
+(
+  cd_produto      NUMBER generated always as identity (nocache),
+  ds_produto      VARCHAR2(150) not null,
+  cd_unid_compra  VARCHAR2(3) not null,
+  cd_unid_venda   VARCHAR2(3) not null,
+  cd_unid_estoque VARCHAR2(3) not null,
+  nr_peso         NUMBER,
+  cd_unid_peso    VARCHAR2(3),
+  nr_largura      NUMBER,
+  cd_unid_largura VARCHAR2(3),
+  nr_comprimento  NUMBER,
+  cd_unid_comprim VARCHAR2(3),
+  nr_altura       NUMBER,
+  cd_unid_altura  VARCHAR2(3),
+  cd_marca        NUMBER,
+  fg_situacao     CHAR(1),
+  im_produto      BLOB
+)
+;
+alter table PRODUTO
+  add constraint PK_PRODUTO primary key (CD_PRODUTO);
+

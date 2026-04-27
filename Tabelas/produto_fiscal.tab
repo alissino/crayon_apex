@@ -1,0 +1,22 @@
+﻿create table PRODUTO_FISCAL
+(
+  cd_produto       NUMBER not null,
+  nr_ncm           VARCHAR2(10),
+  nr_cest          NUMBER,
+  dm_origem        VARCHAR2(1),
+  ds_ean           VARCHAR2(20),
+  ds_ean_trib      VARCHAR2(20),
+  cd_unid_trib     VARCHAR2(6),
+  nr_fator_conv    NUMBER(15,4),
+  dm_origem_fiscal VARCHAR2(2)
+)
+;
+alter table PRODUTO_FISCAL
+  add constraint PK_PRODTRIB primary key (CD_PRODUTO);
+alter table PRODUTO_FISCAL
+  add constraint FK_PRODTRIB_NCM foreign key (NR_NCM)
+  references NCM (CD_NCM);
+alter table PRODUTO_FISCAL
+  add constraint FK_PRODTRIB_PRODUTO foreign key (CD_PRODUTO)
+  references PRODUTO (CD_PRODUTO) on delete cascade;
+

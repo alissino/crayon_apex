@@ -1,0 +1,14 @@
+﻿create table PARAMETRO_USUARIO
+(
+  cd_param_usu NUMBER not null,
+  cd_parametro VARCHAR2(45) not null,
+  cd_usuario   VARCHAR2(45) not null,
+  ds_valor     VARCHAR2(512)
+)
+;
+alter table PARAMETRO_USUARIO
+  add constraint PARAMETRO_USUARIO_PK primary key (CD_PARAM_USU);
+alter table PARAMETRO_USUARIO
+  add constraint PARAMETRO_USUARIO_FK foreign key (CD_PARAMETRO)
+  references PARAMETRO (CD_PARAMETRO) on delete cascade;
+

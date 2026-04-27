@@ -1,0 +1,18 @@
+﻿create table PARAMETRO
+(
+  cd_parametro VARCHAR2(45) not null,
+  ds_nome      VARCHAR2(100) not null,
+  ds_descricao VARCHAR2(512),
+  dm_tipo      VARCHAR2(2) not null,
+  cd_dominio   VARCHAR2(45),
+  ds_separador VARCHAR2(2),
+  ds_valor     VARCHAR2(512)
+)
+;
+create index PARAMETRO_CD_DOMINIO on PARAMETRO (CD_DOMINIO);
+alter table PARAMETRO
+  add constraint PARAMETRO_PK primary key (CD_PARAMETRO);
+alter table PARAMETRO
+  add constraint PARAMETRO_DOMINIO_FK foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO);
+

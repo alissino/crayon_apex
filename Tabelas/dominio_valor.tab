@@ -1,0 +1,19 @@
+﻿create table DOMINIO_VALOR
+(
+  cd_dm_valor     NUMBER not null,
+  cd_dominio      VARCHAR2(45) not null,
+  nr_seq_apresent NUMBER not null,
+  ds_valor        VARCHAR2(45) not null,
+  ds_mascara      VARCHAR2(256) not null,
+  ds_descricao    VARCHAR2(512)
+)
+;
+create index DOMINIO_VALOR_CD_DOMINIO_IDX on DOMINIO_VALOR (CD_DOMINIO);
+alter table DOMINIO_VALOR
+  add constraint DOMINIO_VALOR_PK primary key (CD_DM_VALOR);
+alter table DOMINIO_VALOR
+  add constraint DOMINIO_VALOR_UQ unique (CD_DOMINIO, DS_VALOR);
+alter table DOMINIO_VALOR
+  add constraint DOMINIO_VALOR_DOMINIO_FK foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO) on delete cascade;
+

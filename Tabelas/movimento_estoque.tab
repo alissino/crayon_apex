@@ -1,0 +1,23 @@
+﻿create table MOVIMENTO_ESTOQUE
+(
+  nr_sequencia NUMBER generated always as identity (nocache),
+  cd_produto   NUMBER not null,
+  cd_local     NUMBER not null,
+  dm_movimento CHAR(1) not null,
+  qt_movimento NUMBER(15,4) not null,
+  dt_movimento DATE default sysdate not null,
+  ds_movimento VARCHAR2(256) not null,
+  cd_usuario   VARCHAR2(20) not null,
+  qt_anterior  NUMBER(15,4) not null,
+  qt_posterior NUMBER(15,4) not null
+)
+;
+alter table MOVIMENTO_ESTOQUE
+  add constraint PK_MOVEST primary key (NR_SEQUENCIA);
+alter table MOVIMENTO_ESTOQUE
+  add constraint FK_MOVEST_LOCEST foreign key (CD_LOCAL)
+  references LOCAL_ESTOQUE (CD_LOCAL);
+alter table MOVIMENTO_ESTOQUE
+  add constraint FK_MOVEST_PRODUTO foreign key (CD_PRODUTO)
+  references PRODUTO (CD_PRODUTO);
+

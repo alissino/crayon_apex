@@ -1,0 +1,11 @@
+﻿create table EXAMES_API
+(
+  id            NUMBER,
+  paciente_nome VARCHAR2(100),
+  cpf           VARCHAR2(14),
+  codigo_exame  VARCHAR2(20),
+  data_exame    DATE,
+  status        VARCHAR2(20)
+)
+;
+

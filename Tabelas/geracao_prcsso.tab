@@ -1,0 +1,24 @@
+﻿create table GERACAO_PRCSSO
+(
+  nr_sequencia     NUMBER not null,
+  cd_prcsso        VARCHAR2(45) not null,
+  dt_geracao       DATE default sysdate not null,
+  dt_inicio        TIMESTAMP(6),
+  dt_termino       TIMESTAMP(6),
+  fg_erro          CHAR(1),
+  cd_usuario       VARCHAR2(20) not null,
+  dm_geracao       CHAR(1) not null,
+  cd_prcsso_origem NUMBER,
+  cd_job           VARCHAR2(26),
+  dt_criacao       DATE default sysdate not null
+)
+;
+alter table GERACAO_PRCSSO
+  add constraint PK_GRCPRCSSO primary key (NR_SEQUENCIA);
+alter table GERACAO_PRCSSO
+  add constraint FK_GRCPRCSSO foreign key (CD_PRCSSO)
+  references PROCESSO (CD_PRCSSO);
+alter table GERACAO_PRCSSO
+  add constraint FK_GRCPRCSSO_GRCPRSSO foreign key (CD_PRCSSO_ORIGEM)
+  references GERACAO_PRCSSO (NR_SEQUENCIA) on delete cascade;
+

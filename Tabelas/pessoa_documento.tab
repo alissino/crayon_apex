@@ -1,0 +1,16 @@
+﻿create table PESSOA_DOCUMENTO
+(
+  cd_pessoa    NUMBER not null,
+  cd_documento VARCHAR2(5) not null,
+  ds_documento VARCHAR2(45) not null
+)
+;
+alter table PESSOA_DOCUMENTO
+  add constraint PK_PESSDOC primary key (CD_PESSOA, CD_DOCUMENTO);
+alter table PESSOA_DOCUMENTO
+  add constraint FK_PESSDOC_DOC foreign key (CD_DOCUMENTO)
+  references DOCUMENTO (CD_DOCUMENTO);
+alter table PESSOA_DOCUMENTO
+  add constraint FK_PESSDOC_PESSOA foreign key (CD_PESSOA)
+  references PESSOA (CD_PESSOA) on delete cascade;
+

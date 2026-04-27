@@ -1,0 +1,16 @@
+﻿create table PESSOA
+(
+  cd_pessoa       NUMBER generated always as identity (nocache),
+  dm_tipo         CHAR(2) not null,
+  ds_nome         VARCHAR2(150) not null,
+  ds_fantasia     VARCHAR2(150),
+  ds_nome_social  VARCHAR2(150),
+  dt_nascimento   DATE not null,
+  dm_sexo         CHAR(1),
+  dm_estado_civil CHAR(2),
+  dt_cadastro     DATE default sysdate not null
+)
+;
+alter table PESSOA
+  add constraint PK_PESSOA primary key (CD_PESSOA);
+

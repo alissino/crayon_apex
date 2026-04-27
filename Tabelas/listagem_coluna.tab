@@ -1,0 +1,29 @@
+﻿create table LISTAGEM_COLUNA
+(
+  cd_listagem    VARCHAR2(45) not null,
+  cd_coluna      VARCHAR2(45) not null,
+  nr_ordem       NUMBER not null,
+  ds_coluna      VARCHAR2(100) not null,
+  ds_mascara     VARCHAR2(255),
+  dm_alinhamento CHAR(1) default 'E' not null,
+  dm_expandir    CHAR(1) default 'A' not null,
+  qt_tamanho     NUMBER,
+  fg_retorno     CHAR(1) default 'N' not null,
+  cd_dominio     VARCHAR2(45),
+  dm_tipo        VARCHAR2(45)
+)
+;
+alter table LISTAGEM_COLUNA
+  add constraint PK_LISTAGEM_COLUNA primary key (CD_LISTAGEM, CD_COLUNA);
+alter table LISTAGEM_COLUNA
+  add constraint FK_LISTAGEM_COLUNA_DOMINIO foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO);
+alter table LISTAGEM_COLUNA
+  add constraint FK_LISTAGEM_COLUNA_LISTAGEM foreign key (CD_LISTAGEM)
+  references LISTAGEM (CD_LISTAGEM) on delete cascade;
+alter table LISTAGEM_COLUNA
+  add constraint CK_LISTCOL_TAM
+  check ((dm_expandir = 'T' and nvl(qt_tamanho, 0) > 0)
+or
+dm_expandir <> 'T');
+

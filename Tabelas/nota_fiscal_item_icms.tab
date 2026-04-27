@@ -1,0 +1,25 @@
+﻿create table NOTA_FISCAL_ITEM_ICMS
+(
+  cd_nf_item           NUMBER not null,
+  dm_crt               VARCHAR2(2),
+  dm_cst_icms          VARCHAR2(3),
+  dm_csons             VARCHAR2(3),
+  dm_mod_base_calc     NUMBER,
+  vl_base_calc         NUMBER(15,4),
+  vl_aliquota          NUMBER(10,4),
+  vl_icms              NUMBER(15,4),
+  vl_reduc_base_calc   NUMBER(15,4),
+  dm_mod_base_calc_st  NUMBER,
+  vl_marg_val_agreg_st NUMBER(15,4),
+  vl_base_calc_st      NUMBER(15,4),
+  vl_aliquota_st       NUMBER(10,4),
+  vl_icms_st           NUMBER(15,4),
+  cd_regra_fiscal      NUMBER
+)
+;
+alter table NOTA_FISCAL_ITEM_ICMS
+  add constraint PK_NFITMICMS primary key (CD_NF_ITEM);
+alter table NOTA_FISCAL_ITEM_ICMS
+  add constraint FK_NFITMICMS_REGFISC foreign key (CD_REGRA_FISCAL)
+  references REGRA_FISCAL (NR_SEQUENCIA) on delete set null;
+

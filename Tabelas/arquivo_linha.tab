@@ -1,0 +1,13 @@
+﻿create table ARQUIVO_LINHA
+(
+  cd_arquivo NUMBER not null,
+  nr_linha   NUMBER not null,
+  ds_linha   CLOB
+)
+;
+alter table ARQUIVO_LINHA
+  add constraint ARQ_LINHA_PK primary key (CD_ARQUIVO, NR_LINHA);
+alter table ARQUIVO_LINHA
+  add constraint ARQ_LINHA_ARQ_FK foreign key (CD_ARQUIVO)
+  references ARQUIVO (CD_ARQUIVO) on delete cascade;
+

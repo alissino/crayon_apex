@@ -1,0 +1,12 @@
+﻿create table LOG_SYSTEMA
+(
+  cd_log       NUMBER generated always as identity (nocache),
+  dt_log       DATE default sysdate not null,
+  cd_usuario   VARCHAR2(45),
+  ds_log       VARCHAR2(4000),
+  ds_callstack VARCHAR2(4000)
+)
+;
+alter table LOG_SYSTEMA
+  add constraint PK_LOG primary key (CD_LOG);
+

@@ -1,0 +1,32 @@
+﻿create table REGRA_FISCAL
+(
+  nr_sequencia       NUMBER default crayon.s_regra_fiscal.nextval not null,
+  cd_cfop            VARCHAR2(4),
+  cd_ncm             VARCHAR2(10),
+  dm_crt             CHAR(1),
+  cd_estado_origem   NUMBER,
+  cd_estado_destino  NUMBER,
+  dm_cst_icms        VARCHAR2(3),
+  nr_aliquota_icms   NUMBER(10,4),
+  dm_cst_pis         VARCHAR2(2),
+  nr_aliquota_pis    NUMBER(10,4),
+  dm_cst_cofins      VARCHAR2(2),
+  nr_aliquota_cofins NUMBER(10,4),
+  nr_ordem           NUMBER
+)
+;
+alter table REGRA_FISCAL
+  add constraint PK_REGFISCAL primary key (NR_SEQUENCIA);
+alter table REGRA_FISCAL
+  add constraint FK_REGFISCAL_CFOP foreign key (CD_CFOP)
+  references CFOP (CD_CFOP);
+alter table REGRA_FISCAL
+  add constraint FK_REGFISCAL_ESTADO1 foreign key (CD_ESTADO_ORIGEM)
+  references ESTADO (CD_ESTADO);
+alter table REGRA_FISCAL
+  add constraint FK_REGFISCAL_ESTADO2 foreign key (CD_ESTADO_DESTINO)
+  references ESTADO (CD_ESTADO);
+alter table REGRA_FISCAL
+  add constraint FK_REGFISCAL_NCM foreign key (CD_NCM)
+  references NCM (CD_NCM);
+

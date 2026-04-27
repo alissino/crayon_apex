@@ -1,0 +1,17 @@
+﻿create table PRODUTO_CONFG_ESTOQUE
+(
+  cd_produto    NUMBER not null,
+  fg_contrl_est CHAR(1) not null,
+  cd_prod_est   NUMBER,
+  cd_fator_conv NUMBER(15,4)
+)
+;
+alter table PRODUTO_CONFG_ESTOQUE
+  add constraint PK_PRODCFGEST primary key (CD_PRODUTO);
+alter table PRODUTO_CONFG_ESTOQUE
+  add constraint FK_PRODCFGEST_PRODUTO foreign key (CD_PRODUTO)
+  references PRODUTO (CD_PRODUTO) on delete cascade;
+alter table PRODUTO_CONFG_ESTOQUE
+  add constraint FK_PRODCFGEST_PRODUTO1 foreign key (CD_PROD_EST)
+  references PRODUTO (CD_PRODUTO);
+

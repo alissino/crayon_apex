@@ -1,0 +1,12 @@
+﻿create table CFOP
+(
+  cd_cfop     VARCHAR2(4) not null,
+  ds_cfop     VARCHAR2(256),
+  dt_vigencia DATE,
+  dm_situacao CHAR(1) default 'A',
+  dm_operacao CHAR(1)
+)
+;
+alter table CFOP
+  add constraint PK_CFOP primary key (CD_CFOP);
+

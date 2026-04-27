@@ -1,0 +1,14 @@
+﻿create table VALID_TAB
+(
+  nr_sequencia NUMBER generated always as identity (nocache order),
+  cd_tabela    VARCHAR2(100) not null,
+  cd_coluna    VARCHAR2(100) not null,
+  ds_validacao VARCHAR2(256) not null,
+  ds_sql       VARCHAR2(4000),
+  ds_valores   VARCHAR2(4000),
+  dm_situacao  CHAR(1) default 'A' not null
+)
+;
+alter table VALID_TAB
+  add constraint PK_VALIDTAB primary key (NR_SEQUENCIA);
+

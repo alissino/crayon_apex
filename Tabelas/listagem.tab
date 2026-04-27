@@ -1,0 +1,10 @@
+﻿create table LISTAGEM
+(
+  cd_listagem VARCHAR2(45) not null,
+  ds_listagem VARCHAR2(100) not null,
+  ds_sql      VARCHAR2(4000)
+)
+;
+alter table LISTAGEM
+  add constraint PK_LISTAGEM primary key (CD_LISTAGEM);
+

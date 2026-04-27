@@ -1,0 +1,13 @@
+﻿create table DOCUMENTO
+(
+  cd_documento   VARCHAR2(5) not null,
+  ds_documento   VARCHAR2(45) not null,
+  dm_pessoa      VARCHAR2(2),
+  ds_mascara     VARCHAR2(45),
+  fg_obrigatorio CHAR(1) not null,
+  dm_situacao    CHAR(1) not null
+)
+;
+alter table DOCUMENTO
+  add constraint PK_DOC primary key (CD_DOCUMENTO);
+

@@ -1,0 +1,10 @@
+﻿create table CEST
+(
+  cd_cest      VARCHAR2(10) not null,
+  ds_descricao VARCHAR2(256),
+  dm_situacao  CHAR(1) default 'A' not null
+)
+;
+alter table CEST
+  add constraint PK_CEST primary key (CD_CEST);
+

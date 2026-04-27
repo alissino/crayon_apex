@@ -1,0 +1,10 @@
+﻿create table UNIDADE
+(
+  cd_unidade  VARCHAR2(3) not null,
+  ds_unidade  VARCHAR2(45) not null,
+  dm_situacao CHAR(1) default 'A' not null
+)
+;
+alter table UNIDADE
+  add constraint PK_UNID primary key (CD_UNIDADE);
+

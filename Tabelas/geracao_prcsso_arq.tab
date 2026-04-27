@@ -1,0 +1,21 @@
+﻿create table GERACAO_PRCSSO_ARQ
+(
+  nr_sequencia  NUMBER generated always as identity (nocache order),
+  nr_seq_prcsso NUMBER not null,
+  dt_geracao    DATE default sysdate not null,
+  cd_dir_oracle VARCHAR2(64),
+  ds_local      VARCHAR2(255),
+  ds_nome       VARCHAR2(255),
+  ds_conteudo   BLOB,
+  cd_arquivo    NUMBER
+)
+;
+alter table GERACAO_PRCSSO_ARQ
+  add constraint PK_GRCPRCARQ primary key (NR_SEQUENCIA);
+alter table GERACAO_PRCSSO_ARQ
+  add constraint FK_GRCPRCARQ_ARQ foreign key (CD_ARQUIVO)
+  references ARQUIVO (CD_ARQUIVO);
+alter table GERACAO_PRCSSO_ARQ
+  add constraint FK_GRCPRCARQ_GRCPRC foreign key (NR_SEQ_PRCSSO)
+  references GERACAO_PRCSSO (NR_SEQUENCIA) on delete cascade;
+

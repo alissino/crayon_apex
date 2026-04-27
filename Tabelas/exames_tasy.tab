@@ -1,0 +1,11 @@
+﻿create table EXAMES_TASY
+(
+  id                 NUMBER,
+  nome_paciente      VARCHAR2(100),
+  exame_codigo       VARCHAR2(20),
+  data_exame         DATE,
+  status             VARCHAR2(20),
+  data_processamento DATE
+)
+;
+

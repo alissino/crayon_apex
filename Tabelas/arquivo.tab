@@ -1,0 +1,14 @@
+﻿create table ARQUIVO
+(
+  cd_arquivo      NUMBER generated always as identity (nocache order),
+  ds_nome         VARCHAR2(100) not null,
+  ds_extencao     VARCHAR2(10) not null,
+  ds_path         VARCHAR2(256) not null,
+  ds_ora_dir      VARCHAR2(20) not null,
+  ds_quebra_linha VARCHAR2(5),
+  ds_conteudo     BLOB
+)
+;
+alter table ARQUIVO
+  add constraint ARQUIVO_PK primary key (CD_ARQUIVO);
+

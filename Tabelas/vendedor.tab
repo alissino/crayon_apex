@@ -1,0 +1,15 @@
+﻿create table VENDEDOR
+(
+  cd_vendedor    NUMBER not null,
+  ds_nome        VARCHAR2(100) not null,
+  ds_email       VARCHAR2(100),
+  cd_sis_externo VARCHAR2(20),
+  fg_valid_mvto  VARCHAR2(1) not null
+)
+;
+alter table VENDEDOR
+  add constraint VENDEDOR_PK primary key (CD_VENDEDOR);
+alter table VENDEDOR
+  add constraint VENDEDOR_CK_VALID_MVTO
+  check (fg_valid_mvto in ('S', 'N'));
+

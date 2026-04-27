@@ -1,0 +1,14 @@
+﻿create table FORMULARIO
+(
+  cd_formulario  NUMBER generated always as identity (nocache order),
+  ds_titulo      VARCHAR2(100),
+  ds_descricao   VARCHAR2(256),
+  ds_fonte_dados VARCHAR2(4000),
+  ds_acao_salvar VARCHAR2(100),
+  fg_ativo       CHAR(1) default 'S',
+  dt_criacao     DATE default sysdate
+)
+;
+alter table FORMULARIO
+  add constraint PK_FORM primary key (CD_FORMULARIO);
+

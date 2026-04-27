@@ -1,0 +1,12 @@
+﻿create table DOMINIO
+(
+  cd_dominio        VARCHAR2(45) not null,
+  ds_dominio        VARCHAR2(100) not null,
+  fg_colorir        VARCHAR2(1),
+  nr_max_caracteres NUMBER(2),
+  ds_valor_padrao   VARCHAR2(255)
+)
+;
+alter table DOMINIO
+  add constraint DOMINIO_PK primary key (CD_DOMINIO);
+

@@ -1,0 +1,29 @@
+﻿create table RELATORIO_SECAO_CAMPO
+(
+  cd_rel_sec_campo NUMBER generated always as identity (nocache),
+  cd_rel_secao     NUMBER not null,
+  nr_ordem         NUMBER not null,
+  dm_tipo_campo    VARCHAR2(2) not null,
+  ds_origem        VARCHAR2(4000) not null,
+  ds_label         VARCHAR2(100),
+  nr_posicao_x     NUMBER,
+  nr_posicao_y     NUMBER,
+  nr_largura       NUMBER,
+  nr_altura        NUMBER,
+  dm_alinhamento   CHAR(1) not null,
+  ds_mascara       VARCHAR2(100),
+  dm_fonte         VARCHAR2(20) not null,
+  nr_tamanho_fonte NUMBER not null,
+  dm_estilo_fonte  CHAR(1) not null,
+  fg_borda_sup     CHAR(1) not null,
+  fg_borda_inf     CHAR(1) not null,
+  fg_borda_esq     CHAR(1) not null,
+  fg_borda_dir     CHAR(1) not null
+)
+;
+alter table RELATORIO_SECAO_CAMPO
+  add constraint PK_RELSECCAMPO primary key (CD_REL_SEC_CAMPO);
+alter table RELATORIO_SECAO_CAMPO
+  add constraint FK_RELSECCAMPO_RELSECAO foreign key (CD_REL_SECAO)
+  references RELATORIO_SECAO (CD_REL_SECAO) on delete cascade;
+

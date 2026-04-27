@@ -1,0 +1,32 @@
+﻿create table FORMULARIO_CAMPO
+(
+  cd_campo       NUMBER generated always as identity (nocache order),
+  cd_formulario  NUMBER not null,
+  nm_campo       VARCHAR2(45) not null,
+  ds_label       VARCHAR2(100) not null,
+  dm_tipo        VARCHAR2(3) not null,
+  nr_linha       NUMBER not null,
+  nr_coluna      NUMBER not null,
+  nr_span        NUMBER not null,
+  dm_fonte       VARCHAR2(3),
+  cd_dominio     VARCHAR2(45),
+  cd_listagem    VARCHAR2(45),
+  ds_select      CLOB,
+  fg_obrigatorio CHAR(1) default 'N' not null,
+  fg_visivel     CHAR(1) default 'S' not null,
+  fg_editavel    CHAR(1) default 'S' not null,
+  nr_ordem       NUMBER
+)
+;
+alter table FORMULARIO_CAMPO
+  add constraint PK_FORM_CAMPO primary key (CD_CAMPO);
+alter table FORMULARIO_CAMPO
+  add constraint FK_FORM_CAMPO_DOMINIO foreign key (CD_DOMINIO)
+  references DOMINIO (CD_DOMINIO);
+alter table FORMULARIO_CAMPO
+  add constraint FK_FORM_CAMPO_FORM foreign key (CD_FORMULARIO)
+  references FORMULARIO (CD_FORMULARIO) on delete cascade;
+alter table FORMULARIO_CAMPO
+  add constraint FK_FORM_CAMPO_LISTAGEM foreign key (CD_LISTAGEM)
+  references LISTAGEM (CD_LISTAGEM);
+

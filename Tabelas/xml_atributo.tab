@@ -1,0 +1,26 @@
+﻿create table XML_ATRIBUTO
+(
+  cd_xml_atrib      NUMBER generated always as identity (nocache order),
+  cd_xml            NUMBER not null,
+  cd_atributo       VARCHAR2(100) not null,
+  nr_versao         NUMBER not null,
+  fg_obigatorio     CHAR(1) default 'N' not null,
+  ds_descricao      VARCHAR2(100),
+  ds_sql            VARCHAR2(4000),
+  cd_atrib_superior NUMBER
+)
+;
+create unique index XML_ATRIBUTO_PK on XML_ATRIBUTO (CD_XML_ATRIB);
+alter table XML_ATRIBUTO
+  add constraint XML_ATRIB_PK primary key (CD_XML_ATRIB);
+alter table XML_ATRIBUTO
+  add constraint XML_ATRIB_UQ unique (CD_XML, CD_ATRIBUTO, NR_VERSAO)
+  disable
+  novalidate;
+alter table XML_ATRIBUTO
+  add constraint XML_ATRIB_XML_ATRIB_FK foreign key (CD_ATRIB_SUPERIOR)
+  references XML_ATRIBUTO (CD_XML_ATRIB) on delete cascade;
+alter table XML_ATRIBUTO
+  add constraint XML_ATRIB_XML_FK foreign key (CD_XML)
+  references XML (CD_XML) on delete cascade;
+

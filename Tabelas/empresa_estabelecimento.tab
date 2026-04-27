@@ -1,0 +1,19 @@
+﻿create table EMPRESA_ESTABELECIMENTO
+(
+  cd_estab    NUMBER not null,
+  cd_empresa  NUMBER not null,
+  cd_pessoa   NUMBER not null,
+  dm_tipo     VARCHAR2(1) not null,
+  dm_crt      VARCHAR2(1) not null,
+  dm_situacao CHAR(1) default 'A' not null
+)
+;
+alter table EMPRESA_ESTABELECIMENTO
+  add constraint PK_EMPEST primary key (CD_ESTAB);
+alter table EMPRESA_ESTABELECIMENTO
+  add constraint FK_EMPEST_EMPRESA foreign key (CD_EMPRESA)
+  references EMPRESA (CD_EMPRESA);
+alter table EMPRESA_ESTABELECIMENTO
+  add constraint FK_EMPEST_PESSOA foreign key (CD_PESSOA)
+  references PESSOA (CD_PESSOA);
+

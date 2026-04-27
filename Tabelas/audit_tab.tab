@@ -1,0 +1,19 @@
+﻿create table AUDIT_TAB
+(
+  cd_audit     NUMBER not null,
+  ds_tabela    VARCHAR2(62) not null,
+  ds_coluna    VARCHAR2(62) not null,
+  dt_operacao  DATE default sysdate not null,
+  dm_operacao  CHAR(1) not null,
+  cd_usuario   VARCHAR2(20) not null,
+  ds_valor_old VARCHAR2(512),
+  ds_valor_new VARCHAR2(512),
+  ds_chave     VARCHAR2(512)
+)
+;
+alter table AUDIT_TAB
+  add constraint AUDIT_PK primary key (CD_AUDIT, DS_TABELA, DS_COLUNA);
+alter table AUDIT_TAB
+  add constraint CK_AUDIT_OPERACAO
+  check (dm_operacao in ('I', 'U', 'D'));
+

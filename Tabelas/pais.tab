@@ -1,0 +1,10 @@
+﻿create table PAIS
+(
+  cd_pais    NUMBER not null,
+  ds_pais    VARCHAR2(45) not null,
+  ds_cod_iso VARCHAR2(5)
+)
+;
+alter table PAIS
+  add constraint PK_PAIS primary key (CD_PAIS);
+

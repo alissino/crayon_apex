@@ -1,0 +1,9 @@
+﻿create table LISTAGEM_BIND_PADRAO
+(
+  cd_parametro VARCHAR2(45) not null,
+  ds_sql       VARCHAR2(4000) not null
+)
+;
+alter table LISTAGEM_BIND_PADRAO
+  add constraint PK_LISTAGEM_BIND_PADRAO primary key (CD_PARAMETRO);
+

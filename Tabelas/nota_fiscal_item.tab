@@ -1,0 +1,34 @@
+﻿create table NOTA_FISCAL_ITEM
+(
+  cd_nf_item NUMBER default crayon.s_nota_fiscal_item.nextval not null,
+  cd_nota    NUMBER not null,
+  nr_ordem   NUMBER not null,
+  cd_produto NUMBER,
+  vl_produto NUMBER(15,4),
+  qt_produto NUMBER(15,4),
+  vl_total   NUMBER(15,4),
+  cd_cfop    VARCHAR2(4),
+  cd_ncm     VARCHAR2(10),
+  cd_cest    VARCHAR2(10)
+)
+;
+alter table NOTA_FISCAL_ITEM
+  add constraint PK_NFITM primary key (CD_NF_ITEM);
+alter table NOTA_FISCAL_ITEM
+  add constraint UQ_NFITM unique (CD_NOTA, NR_ORDEM);
+alter table NOTA_FISCAL_ITEM
+  add constraint FK_NFITM_CEST foreign key (CD_CEST)
+  references CEST (CD_CEST);
+alter table NOTA_FISCAL_ITEM
+  add constraint FK_NFITM_CFOP foreign key (CD_CFOP)
+  references CFOP (CD_CFOP);
+alter table NOTA_FISCAL_ITEM
+  add constraint FK_NFITM_NCM foreign key (CD_NCM)
+  references NCM (CD_NCM);
+alter table NOTA_FISCAL_ITEM
+  add constraint FK_NFITM_NF foreign key (CD_NOTA)
+  references NOTA_FISCAL (CD_NOTA) on delete cascade;
+alter table NOTA_FISCAL_ITEM
+  add constraint FK_NFITM_PROD foreign key (CD_PRODUTO)
+  references PRODUTO (CD_PRODUTO);
+

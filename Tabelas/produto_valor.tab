@@ -1,0 +1,14 @@
+﻿create table PRODUTO_VALOR
+(
+  nr_sequencia  NUMBER generated always as identity (nocache),
+  cd_produto    NUMBER not null,
+  dt_referencia DATE not null,
+  nr_valor      NUMBER(10,4)
+)
+;
+alter table PRODUTO_VALOR
+  add constraint PK_PRODVAL primary key (NR_SEQUENCIA);
+alter table PRODUTO_VALOR
+  add constraint FK_PRODVAL_PROD foreign key (CD_PRODUTO)
+  references PRODUTO (CD_PRODUTO) on delete cascade;
+

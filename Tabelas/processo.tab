@@ -1,0 +1,11 @@
+﻿create table PROCESSO
+(
+  cd_prcsso VARCHAR2(45) not null,
+  ds_prcsso VARCHAR2(255) not null,
+  cd_rotina VARCHAR2(62) not null,
+  ds_select VARCHAR2(4000)
+)
+;
+alter table PROCESSO
+  add constraint PRCSSO_PK primary key (CD_PRCSSO);
+

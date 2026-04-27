@@ -1,0 +1,14 @@
+﻿create table PESSOA_CONTATO
+(
+  nr_sequencia NUMBER generated always as identity (nocache),
+  cd_pessoa    NUMBER not null,
+  dm_tipo      VARCHAR2(2) not null,
+  ds_contato   VARCHAR2(45) not null
+)
+;
+alter table PESSOA_CONTATO
+  add constraint PK_PESSCONT primary key (NR_SEQUENCIA);
+alter table PESSOA_CONTATO
+  add constraint FK_PESSCONT_PESSOA foreign key (CD_PESSOA)
+  references PESSOA (CD_PESSOA) on delete cascade;
+

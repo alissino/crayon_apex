@@ -1,0 +1,18 @@
+﻿create table CEST_NCM
+(
+  nr_sequencia NUMBER generated always as identity (nocache order),
+  cd_cest      VARCHAR2(10) not null,
+  cd_ncm       VARCHAR2(10) not null
+)
+;
+alter table CEST_NCM
+  add constraint PK_CESTNCM primary key (NR_SEQUENCIA);
+alter table CEST_NCM
+  add constraint UQ_CESTNCM unique (CD_CEST, CD_NCM);
+alter table CEST_NCM
+  add constraint FK_CESTNCM_CEST foreign key (CD_CEST)
+  references CEST (CD_CEST) on delete cascade;
+alter table CEST_NCM
+  add constraint FK_CESTNCM_NCM foreign key (CD_NCM)
+  references NCM (CD_NCM) on delete cascade;
+

@@ -1,0 +1,16 @@
+﻿create table GERACAO_PRCSSO_ERR
+(
+  nr_sequencia     NUMBER not null,
+  nr_seq_geracao   NUMBER not null,
+  dt_erro          DATE not null,
+  ds_erro          VARCHAR2(4000),
+  nr_seq_expressao NUMBER,
+  cd_usuario       VARCHAR2(20)
+)
+;
+alter table GERACAO_PRCSSO_ERR
+  add constraint PK_GRCPRCERR primary key (NR_SEQUENCIA);
+alter table GERACAO_PRCSSO_ERR
+  add constraint FK_GRCPRCERR_GRCPRCSSO foreign key (NR_SEQ_GERACAO)
+  references GERACAO_PRCSSO (NR_SEQUENCIA) on delete cascade;
+

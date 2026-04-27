@@ -1,0 +1,28 @@
+﻿create table RELATORIO
+(
+  cd_relatorio   NUMBER generated always as identity (nocache),
+  ds_nome        VARCHAR2(100) not null,
+  ds_observacao  VARCHAR2(4000),
+  dm_pagina      VARCHAR2(2) not null,
+  dm_orientacao  CHAR(1) not null,
+  dm_unid_medida VARCHAR2(2) not null,
+  nr_margem_sup  NUMBER not null,
+  nr_margem_inf  NUMBER not null,
+  nr_margem_esq  NUMBER not null,
+  nr_margem_dir  NUMBER not null,
+  fg_borda_sup   CHAR(1) not null,
+  fg_borda_inf   CHAR(1) not null,
+  fg_borda_esq   CHAR(1) not null,
+  fg_borda_dir   CHAR(1) not null,
+  cd_processo    VARCHAR2(45),
+  ds_sql         VARCHAR2(4000),
+  fg_pag_relat   CHAR(1),
+  ds_icone       VARCHAR2(45)
+)
+;
+alter table RELATORIO
+  add constraint PK_RELAT primary key (CD_RELATORIO);
+alter table RELATORIO
+  add constraint FK_RELAT_PRCSSO foreign key (CD_PROCESSO)
+  references PROCESSO (CD_PRCSSO) on delete cascade;
+

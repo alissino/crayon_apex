@@ -1,0 +1,14 @@
+﻿create table LOCAL_ESTOQUE
+(
+  cd_local    NUMBER generated always as identity (nocache),
+  ds_local    VARCHAR2(45) not null,
+  dm_situacao CHAR(1) not null,
+  cd_estab    NUMBER
+)
+;
+alter table LOCAL_ESTOQUE
+  add constraint PK_LOCEST primary key (CD_LOCAL);
+alter table LOCAL_ESTOQUE
+  add constraint FK_LOCEST_EMPESTAB foreign key (CD_ESTAB)
+  references EMPRESA_ESTABELECIMENTO (CD_ESTAB);
+

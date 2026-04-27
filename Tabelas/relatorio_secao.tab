@@ -1,0 +1,26 @@
+﻿create table RELATORIO_SECAO
+(
+  cd_rel_secao     NUMBER generated always as identity (nocache),
+  cd_relatorio     NUMBER not null,
+  nr_ordem         NUMBER not null,
+  ds_nome          VARCHAR2(100) not null,
+  dm_tipo          VARCHAR2(2) not null,
+  nr_altura        NUMBER not null,
+  ds_sql           VARCHAR2(4000),
+  ds_cor_fundo     VARCHAR2(7),
+  dm_repetir       CHAR(1) not null,
+  fg_borda_sup     CHAR(1) not null,
+  fg_borda_inf     CHAR(1) not null,
+  fg_borda_esq     CHAR(1) not null,
+  fg_borda_dir     CHAR(1) not null,
+  cd_rel_secao_pai NUMBER,
+  ds_cor_cabecalho VARCHAR2(7),
+  ds_cor_alterna   VARCHAR2(7)
+)
+;
+alter table RELATORIO_SECAO
+  add constraint PK_RELSECAO primary key (CD_REL_SECAO);
+alter table RELATORIO_SECAO
+  add constraint FK_RELSECAO_RELSECAO foreign key (CD_REL_SECAO_PAI)
+  references RELATORIO_SECAO (CD_REL_SECAO) on delete set null;
+
