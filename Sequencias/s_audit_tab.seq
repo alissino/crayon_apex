@@ -1,0 +1,8 @@
+﻿create sequence S_AUDIT_TAB
+minvalue 1
+maxvalue 9999999999999999999999999999
+start with 6851
+increment by 1
+nocache
+order;
+

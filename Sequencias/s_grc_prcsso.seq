@@ -1,0 +1,8 @@
+﻿create sequence S_GRC_PRCSSO
+minvalue 1
+maxvalue 9999999999999999999999999999
+start with 461
+increment by 1
+nocache
+order;
+
