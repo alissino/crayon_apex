@@ -60,17 +60,6 @@ create or replace package body k_cfop is
                               aux_rc_cfop.ds_cfop,
                               aux_rc_cfop.dt_vig;
         exit when aux_cursor%notfound;
-      /*for aux_rc_cfop in (select col001 cd_cfop,
-               substr(col002, 1, 200) ds_cfop,
-               to_date(col003, 'dd/mm/yyyy') dt_vig
-          from table(apex_data_parser.parse(p_content           => aux_conteudo,
-                                            p_file_name         => aux_ds_arquivo,
-                                            p_csv_col_delimiter => aux_ds_separador,
-                                            p_skip_rows         => case aux_dm_cabecalho
-                                                                     when 'S' then 1
-                                                                     else null
-                                                                   end)))
-      loop*/
         
         select count(1)
           into aux_nr_cont

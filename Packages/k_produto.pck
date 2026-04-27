@@ -39,7 +39,11 @@ create or replace package k_produto is
                                prm_cd_unid_conv  produto_fornecedor.cd_unid_conv%type,
                                prm_nr_fator_conv produto_fornecedor.nr_fator_conv%type,
                                prm_dm_status     varchar2);
-                               
+  
+  function f_buscar_preco(prm_cd_produto    produto.cd_produto%type,
+                          prm_cd_estab      empresa_estabelecimento.cd_estab%type,
+                          prm_dt_referencia date default sysdate)
+    return produto_valor.nr_valor%type;
 
 end k_produto;
 /
@@ -215,6 +219,26 @@ create or replace package body k_produto is
       end if;
     end p_salvar_prod_forn;
   
+  function f_buscar_preco(prm_cd_produto    produto.cd_produto%type,
+                          prm_cd_estab      empresa_estabelecimento.cd_estab%type,
+                          prm_dt_referencia date default sysdate)
+    return produto_valor.nr_valor%type
+    is
+      aux_nr_preco produto_valor.nr_valor%type;
+    begin
+      
+      select pv.nr_valor
+        into aux_nr_preco
+        from produto_valor pv
+       where pv.nr_sequencia = (select b.nr_sequencia
+                                  from (select a.nr_sequencia
+                                          from produto_valor a
+                                         where a.cd_produto    =  prm_cd_produto
+                                           and a.dt_referencia <= nvl(prm_dt_referencia, sysdate)
+                                         order by a.dt_referencia desc) b
+                                 where rownum = 1);
+      return aux_nr_preco;
+    end f_buscar_preco;
   
                                    
 end k_produto;

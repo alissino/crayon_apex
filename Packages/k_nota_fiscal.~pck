@@ -1,0 +1,158 @@
+create or replace package k_nota_fiscal is
+
+  procedure p_incluir_nf(prm_cd_nota    in out nota_fiscal.cd_nota%type,
+                         prm_cd_estab   in nota_fiscal.cd_estab%type,
+                         prm_cd_pessoa  in nota_fiscal.cd_pessoa%type,
+                         prm_dt_emissao in nota_fiscal.dt_emissao%type,
+                         prm_cd_cfop    in nota_fiscal.cd_cfop%type);
+  
+  procedure p_salvar_item(prm_cd_item    in out nota_fiscal_item.cd_nf_item%type,
+                          prm_cd_nota    in nota_fiscal_item.cd_nota%type,
+                          prm_cd_produto in nota_fiscal_item.cd_produto%type,
+                          prm_qt_produto in nota_fiscal_item.qt_produto%type);
+  
+  procedure p_calc_nf(prm_cd_nota nota_fiscal.cd_nota%type);
+  
+
+end k_nota_fiscal;
+/
+create or replace package body k_nota_fiscal is
+  
+  function f_buscar_estab_nota(prm_cd_nota nota_fiscal.cd_nota%type)
+    return nota_fiscal.cd_estab%type
+    is
+      aux_cd_estab nota_fiscal.cd_estab%type;
+    begin
+      select nf.cd_estab
+        into aux_cd_estab
+        from nota_fiscal nf
+       where nf.cd_nota = prm_cd_nota;
+      return aux_cd_estab;
+    end f_buscar_estab_nota;
+
+  procedure p_incluir_nf(prm_cd_nota    in out nota_fiscal.cd_nota%type,
+                         prm_cd_estab   in nota_fiscal.cd_estab%type,
+                         prm_cd_pessoa  in nota_fiscal.cd_pessoa%type,
+                         prm_dt_emissao in nota_fiscal.dt_emissao%type,
+                         prm_cd_cfop    in nota_fiscal.cd_cfop%type)
+    is
+      aux_nr_numero   nota_fiscal.nr_numero%type;
+      aux_nr_serie    nota_fiscal.nr_serie%type;
+      aux_dm_operacao nota_fiscal.dm_tipo_operacao%type;
+      aux_dm_status   nota_fiscal.dm_status%type   := 'DG';
+      aux_vl_produtos nota_fiscal.vl_produtos%type := 0;
+      aux_vl_nota     nota_fiscal.vl_nota%type     := 0;
+    begin
+      
+      k_empresa.p_buscar_num_serie_nf(prm_cd_estab  => prm_cd_estab,
+                                      prm_nr_numero => aux_nr_numero,
+                                      prm_nr_serie  => aux_nr_serie);
+                                      
+      aux_dm_operacao := k_cfop.f_buscar_dm_operacao(prm_cd_cfop);
+      
+      insert
+        into nota_fiscal
+            (cd_estab,
+             cd_pessoa,
+             nr_numero,
+             nr_serie,
+             dt_emissao,
+             cd_cfop,
+             dm_tipo_operacao,
+             dm_status,
+             vl_produtos,
+             vl_nota)
+      values(prm_cd_estab,
+             prm_cd_pessoa,
+             aux_nr_numero,
+             aux_nr_serie,
+             prm_dt_emissao,
+             prm_cd_cfop,
+             aux_dm_operacao,
+             aux_dm_status,
+             aux_vl_produtos,
+             aux_vl_nota)
+      returning cd_nota
+           into prm_cd_nota;
+      
+    
+    end p_incluir_nf;
+  
+  procedure p_salvar_item(prm_cd_item    in out nota_fiscal_item.cd_nf_item%type,
+                          prm_cd_nota    in nota_fiscal_item.cd_nota%type,
+                          prm_cd_produto in nota_fiscal_item.cd_produto%type,
+                          prm_qt_produto in nota_fiscal_item.qt_produto%type)
+    is
+      aux_nr_ordem   nota_fiscal_item.nr_ordem%type;
+      aux_vl_produto nota_fiscal_item.vl_produto%type;
+      aux_vl_total   nota_fiscal_item.vl_total%type;
+      
+      aux_cd_ncm     nota_fiscal_item.cd_ncm%type;
+      aux_cd_cest    nota_fiscal_item.cd_cest%type;
+      aux_cd_unid    nota_fiscal_item.cd_unidade%type;
+      
+      aux_cd_estab   nota_fiscal.cd_estab%type;
+      aux_dt_emiss   nota_fiscal.dt_emissao%type;
+    begin
+      select max(nfi.nr_ordem)
+        into aux_nr_ordem
+        from nota_fiscal_item nfi
+       where nfi.cd_nota = prm_cd_nota;
+       
+      select nf.cd_estab,
+             nf.dt_emissao
+        into aux_cd_estab,
+             aux_dt_emiss
+        from nota_fiscal nf
+       where nf.cd_nota = prm_cd_nota;
+      
+      select pf.nr_ncm,
+             pf.nr_cest,
+             p.cd_unid_venda
+        into aux_cd_ncm,
+             aux_cd_cest,
+             aux_cd_unid
+        from produto        p,
+             produto_fiscal pf
+       where pf.cd_produto = p.cd_produto
+         and p.cd_produto  = prm_cd_produto;
+      
+      aux_nr_ordem   := nvl(aux_nr_ordem, 0) + 1;
+      aux_vl_produto := k_produto.f_buscar_preco(prm_cd_produto    => prm_cd_produto,
+                                                 prm_cd_estab      => aux_cd_estab,
+                                                 prm_dt_referencia => aux_dt_emiss);
+      aux_vl_total   := aux_vl_produto * prm_qt_produto;
+      
+      insert
+        into nota_fiscal_item
+            (cd_nota,
+             nr_ordem,
+             cd_produto,
+             vl_produto,
+             qt_produto,
+             vl_total,
+             cd_ncm,
+             cd_cest,
+             cd_unidade)
+      values(prm_cd_nota,
+             aux_nr_ordem,
+             prm_cd_produto,
+             aux_vl_produto,
+             prm_qt_produto,
+             aux_vl_total,
+             aux_cd_ncm,
+             aux_cd_cest,
+             aux_cd_unid)
+      returning cd_nf_item
+           into prm_cd_item;
+                                                 
+    end p_salvar_item;
+  
+  procedure p_calc_nf(prm_cd_nota nota_fiscal.cd_nota%type)
+    is
+    begin
+      null;
+    end p_calc_nf;
+  
+end k_nota_fiscal;
+/

@@ -17,6 +17,9 @@ create or replace package k_empresa is
   function f_buscar_fantasia_emp(prm_cd_empresa empresa.cd_empresa%type)
     return pessoa.ds_fantasia%type;
     
+  function f_buscar_empresa_estab(prm_cd_estab empresa_estabelecimento.cd_estab%type)
+    return empresa.cd_empresa%type;
+    
   function f_buscar_cd_pess_estab(prm_cd_estab empresa_estabelecimento.cd_estab%type)
     return pessoa.cd_pessoa%type;
   
@@ -30,6 +33,13 @@ create or replace package k_empresa is
                               prm_cd_doc   pessoa_documento.cd_documento%type,
                               prm_vf_mask  boolean default false)
     return pessoa_documento.ds_documento%type;
+  
+  
+  function f_buscar_estab_ativo
+    return empresa_estabelecimento.cd_estab%type;
+  
+  function f_buscar_empresa_ativa
+    return empresa.cd_empresa%type;
 
 end k_empresa;
 /
@@ -108,6 +118,18 @@ create or replace package body k_empresa is
     begin
       return null;
     end f_buscar_fantasia_emp;
+  
+  function f_buscar_empresa_estab(prm_cd_estab empresa_estabelecimento.cd_estab%type)
+    return empresa.cd_empresa%type
+    is
+      aux_cd_empresa empresa.cd_empresa%type;
+    begin
+      select ee.cd_empresa
+        into aux_cd_empresa
+        from empresa_estabelecimento ee
+       where ee.cd_estab = prm_cd_estab;
+      return aux_cd_empresa;
+    end f_buscar_empresa_estab;
     
   function f_buscar_cd_pess_estab(prm_cd_estab empresa_estabelecimento.cd_estab%type)
     return pessoa.cd_pessoa%type
@@ -153,6 +175,21 @@ create or replace package body k_empresa is
                                    prm_cd_documento => prm_cd_doc,
                                    prm_vf_mask      => prm_vf_mask);
     end f_buscar_doc_estab;
+    
+    
+  function f_buscar_estab_ativo
+    return empresa_estabelecimento.cd_estab%type
+    is
+    begin
+      return v('CD_ESTAB');
+    end f_buscar_estab_ativo;
+  
+  function f_buscar_empresa_ativa
+    return empresa.cd_empresa%type
+    is
+    begin
+      return f_buscar_empresa_estab(f_buscar_estab_ativo);
+    end f_buscar_empresa_ativa;
   
 end k_empresa;
 /

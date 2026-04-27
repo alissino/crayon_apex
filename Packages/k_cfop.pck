@@ -4,7 +4,9 @@ create or replace package k_cfop is
   
   function f_buscar_desc(prm_cd_cfop cfop.cd_cfop%type)
     return cfop.ds_cfop%type;
-    
+  
+  function f_buscar_dm_operacao(prm_cd_cfop cfop.cd_cfop%type)
+    return cfop.dm_operacao%type;
   
 
 end k_cfop;
@@ -104,7 +106,20 @@ create or replace package body k_cfop is
        where c.cd_cfop = prm_cd_cfop;
       return aux_ds_cfop;
     end f_buscar_desc;
-    
+  
+  function f_buscar_dm_operacao(prm_cd_cfop cfop.cd_cfop%type)
+    return cfop.dm_operacao%type
+    is
+      aux_dm_operacao cfop.dm_operacao%type;
+    begin
+      select c.dm_operacao
+        into aux_dm_operacao
+        from cfop c
+       where c.cd_cfop = prm_cd_cfop;
+       
+      return aux_dm_operacao;
+      
+    end f_buscar_dm_operacao;
   
 end k_cfop;
 /
