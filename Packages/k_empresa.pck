@@ -205,13 +205,27 @@ create or replace package body k_empresa is
     begin
     
       lock table empresa_estab_seq_nf in exclusive mode wait 2;
-    
-      select sf.nr_prox_numero,
-             sf.nr_serie
-        into prm_nr_numero,
-             prm_nr_serie
-        from empresa_estab_seq_nf sf
-       where sf.cd_estab = prm_cd_estab;
+      
+      begin
+        select sf.nr_prox_numero,
+               sf.nr_serie
+          into prm_nr_numero,
+               prm_nr_serie
+          from empresa_estab_seq_nf sf
+         where sf.cd_estab = prm_cd_estab;
+      exception
+        when no_data_found then
+          prm_nr_numero := 1;
+          prm_nr_serie  := 1;
+          insert
+            into empresa_estab_seq_nf
+                (cd_estab,
+                 nr_serie,
+                 nr_prox_numero)
+          values(prm_cd_estab,
+                 prm_nr_serie,
+                 prm_nr_numero);
+      end;
       
       aux_nr_num_calc   := prm_nr_numero + 1;
       aux_nr_serie_calc := prm_nr_serie;

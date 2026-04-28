@@ -1,7 +1,7 @@
 ﻿create sequence DOMINIO_VALOR_SEQ
 minvalue 1
 maxvalue 9999999999999999999999999999
-start with 301
+start with 321
 increment by 1
 cache 20;
 

@@ -44,6 +44,13 @@ create or replace package k_produto is
                           prm_cd_estab      empresa_estabelecimento.cd_estab%type,
                           prm_dt_referencia date default sysdate)
     return produto_valor.nr_valor%type;
+    
+  function f_buscar_prod_ean(prm_ds_ean produto_fiscal.ds_ean%type)
+    return produto.cd_produto%type;
+  
+  function f_buscar_info_prod(prm_cd_prod produto.cd_produto%type,
+                              prm_dm_info varchar2)
+    return varchar2;
 
 end k_produto;
 /
@@ -240,6 +247,54 @@ create or replace package body k_produto is
       return aux_nr_preco;
     end f_buscar_preco;
   
+  function f_buscar_prod_ean(prm_ds_ean produto_fiscal.ds_ean%type)
+    return produto.cd_produto%type
+    is
+      aux_cd_produto produto.cd_produto%type;
+    begin
+      select pf.cd_produto
+        into aux_cd_produto
+        from produto_fiscal pf
+       where pf.ds_ean = prm_ds_ean
+          or pf.ds_ean_trib = prm_ds_ean;
+      return aux_cd_produto;
+    exception
+      when no_data_found or too_many_rows then
+        return null;
+      when others then
+        raise;
+    end f_buscar_prod_ean;
+    
+  function f_buscar_info_prod(prm_cd_prod produto.cd_produto%type,
+                              prm_dm_info varchar2)
+    return varchar2
+    is
+      aux_ds_retorno varchar2(256);
+    begin
+      if upper(prm_dm_info) = 'DESC' then
+        select p.ds_produto
+          into aux_ds_retorno
+          from produto p
+         where p.cd_produto = prm_cd_prod;
+         
+      elsif upper(prm_dm_info) = 'UND' then
+        select p.cd_unid_venda
+          into aux_ds_retorno
+          from produto p
+         where p.cd_produto = prm_cd_prod;
+         
+      elsif upper(prm_dm_info) = 'VLR' then
+        return f_buscar_preco(prm_cd_produto    => prm_cd_prod,
+                              prm_cd_estab      => f_buscar_estab_ativo,
+                              prm_dt_referencia => sysdate);
+                              
+      else
+        return null;
+      end if;
+      
+      return aux_ds_retorno;
+    
+    end f_buscar_info_prod;
                                    
 end k_produto;
 /

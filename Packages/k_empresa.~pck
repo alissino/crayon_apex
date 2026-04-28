@@ -40,6 +40,10 @@ create or replace package k_empresa is
   
   function f_buscar_empresa_ativa
     return empresa.cd_empresa%type;
+    
+  procedure p_buscar_num_serie_nf(prm_cd_estab  in  empresa_estabelecimento.cd_estab%type,
+                                  prm_nr_numero out empresa_estab_seq_nf.nr_prox_numero%type,
+                                  prm_nr_serie  out empresa_estab_seq_nf.nr_serie%type);
 
 end k_empresa;
 /
@@ -190,6 +194,45 @@ create or replace package body k_empresa is
     begin
       return f_buscar_empresa_estab(f_buscar_estab_ativo);
     end f_buscar_empresa_ativa;
+    
+  procedure p_buscar_num_serie_nf(prm_cd_estab  in  empresa_estabelecimento.cd_estab%type,
+                                  prm_nr_numero out empresa_estab_seq_nf.nr_prox_numero%type,
+                                  prm_nr_serie  out empresa_estab_seq_nf.nr_serie%type)
+    is
+      pragma autonomous_transaction;
+      aux_nr_num_calc   empresa_estab_seq_nf.nr_prox_numero%type;
+      aux_nr_serie_calc empresa_estab_seq_nf.nr_serie%type;
+    begin
+    
+      lock table empresa_estab_seq_nf in exclusive mode wait 2;
+    
+      select sf.nr_prox_numero,
+             sf.nr_serie
+        into prm_nr_numero,
+             prm_nr_serie
+        from empresa_estab_seq_nf sf
+       where sf.cd_estab = prm_cd_estab;
+      
+      aux_nr_num_calc   := prm_nr_numero + 1;
+      aux_nr_serie_calc := prm_nr_serie;
+      
+      if aux_nr_num_calc > 999999999 then
+        aux_nr_num_calc   := 1;
+        aux_nr_serie_calc := aux_nr_serie_calc + 1;
+      end if;
+      
+      update empresa_estab_seq_nf sf
+         set sf.nr_prox_numero = aux_nr_num_calc,
+             sf.nr_serie       = aux_nr_serie_calc
+       where sf.cd_estab = prm_cd_estab;
+      
+      commit;
+    
+    exception
+      when others then
+        rollback;
+        raise;
+    end p_buscar_num_serie_nf;
   
 end k_empresa;
 /

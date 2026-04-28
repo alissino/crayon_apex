@@ -7,6 +7,9 @@ create or replace package k_pessoa is
                         prm_cd_documento documento.cd_documento%type,
                         prm_vf_mask      boolean default false)
     return pessoa_documento.ds_documento%type;
+    
+  function f_buscar_tipo(prm_cd_pessoa pessoa.cd_pessoa%type)
+    return pessoa.dm_tipo%type;
   
   procedure p_buscar_endereco(prm_cd_pessoa      in pessoa.cd_pessoa%type,
                               prm_nr_endereco    in pessoa_endereco.nr_sequencia%type default null,
@@ -129,6 +132,18 @@ create or replace package body k_pessoa is
       when others then
         raise;
     end;
+    
+  function f_buscar_tipo(prm_cd_pessoa pessoa.cd_pessoa%type)
+    return pessoa.dm_tipo%type
+    is
+      aux_dm_tipo pessoa.dm_tipo%type;
+    begin
+      select p.dm_tipo
+        into aux_dm_tipo
+        from pessoa p
+       where p.cd_pessoa = prm_cd_pessoa;
+      return aux_dm_tipo;
+    end f_buscar_tipo;
   
   procedure p_buscar_endereco(prm_cd_pessoa      in pessoa.cd_pessoa%type,
                               prm_nr_endereco    in pessoa_endereco.nr_sequencia%type default null,

@@ -8,7 +8,7 @@
   dt_emissao         DATE default sysdate,
   dt_saida           DATE,
   cd_cfop            VARCHAR2(4),
-  dm_tipo_operacao   CHAR(1),
+  dm_tipo_operacao   VARCHAR2(1),
   dm_status          VARCHAR2(2),
   ds_chave_acesso    VARCHAR2(44),
   ds_protocolo_autor VARCHAR2(50),

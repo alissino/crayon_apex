@@ -1,7 +1,7 @@
 ﻿create sequence DOMINIO_RELACIONAMENTO_SEQ
 minvalue 1
 maxvalue 9999999999999999999999999999
-start with 361
+start with 381
 increment by 1
 cache 20;
 

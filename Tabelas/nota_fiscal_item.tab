@@ -9,7 +9,9 @@
   vl_total   NUMBER(15,4),
   cd_cfop    VARCHAR2(4),
   cd_ncm     VARCHAR2(10),
-  cd_cest    VARCHAR2(10)
+  cd_cest    VARCHAR2(10),
+  cd_unidade VARCHAR2(3),
+  ds_produto VARCHAR2(256)
 )
 ;
 alter table NOTA_FISCAL_ITEM

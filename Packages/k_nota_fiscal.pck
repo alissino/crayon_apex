@@ -13,6 +13,22 @@ create or replace package k_nota_fiscal is
   
   procedure p_calc_nf(prm_cd_nota nota_fiscal.cd_nota%type);
   
+  
+  procedure p_buscar_dados_nota(prm_cd_nota            in  nota_fiscal.cd_nota%type,
+                                prm_nr_serie           out nota_fiscal.nr_serie%type,
+                                prm_nr_numero          out nota_fiscal.nr_numero%type,
+                                prm_dm_status          out nota_fiscal.dm_status%type,
+                                prm_dm_tipo_operacao   out nota_fiscal.dm_tipo_operacao%type,
+                                prm_dt_emissao         out nota_fiscal.dt_emissao%type,
+                                prm_dt_saida           out nota_fiscal.dt_saida%type,
+                                prm_ds_estab           out varchar2,
+                                prm_ds_cnpj_estab      out varchar2,
+                                prm_ds_pessoa          out varchar2,
+                                prm_ds_doc_pessoa      out varchar2,
+                                prm_ds_cfop            out varchar2,
+                                prm_ds_chave_acesso    out nota_fiscal.ds_chave_acesso%type,
+                                prm_ds_protocolo_autor out nota_fiscal.ds_protocolo_autor%type);
+  
 
 end k_nota_fiscal;
 /
@@ -43,6 +59,9 @@ create or replace package body k_nota_fiscal is
       aux_vl_produtos nota_fiscal.vl_produtos%type := 0;
       aux_vl_nota     nota_fiscal.vl_nota%type     := 0;
     begin
+      if prm_cd_nota is not null then
+        return;
+      end if;
       
       k_empresa.p_buscar_num_serie_nf(prm_cd_estab  => prm_cd_estab,
                                       prm_nr_numero => aux_nr_numero,
@@ -90,10 +109,16 @@ create or replace package body k_nota_fiscal is
       aux_cd_ncm     nota_fiscal_item.cd_ncm%type;
       aux_cd_cest    nota_fiscal_item.cd_cest%type;
       aux_cd_unid    nota_fiscal_item.cd_unidade%type;
+      aux_ds_prod    nota_fiscal_item.ds_produto%type;
       
       aux_cd_estab   nota_fiscal.cd_estab%type;
       aux_dt_emiss   nota_fiscal.dt_emissao%type;
     begin
+      
+      if prm_cd_item is not null then
+        return;
+      end if;
+      
       select max(nfi.nr_ordem)
         into aux_nr_ordem
         from nota_fiscal_item nfi
@@ -108,13 +133,15 @@ create or replace package body k_nota_fiscal is
       
       select pf.nr_ncm,
              pf.nr_cest,
-             p.cd_unid_venda
+             p.cd_unid_venda,
+             p.ds_produto
         into aux_cd_ncm,
              aux_cd_cest,
-             aux_cd_unid
+             aux_cd_unid,
+             aux_ds_prod
         from produto        p,
              produto_fiscal pf
-       where pf.cd_produto = p.cd_produto
+       where pf.cd_produto(+) = p.cd_produto
          and p.cd_produto  = prm_cd_produto;
       
       aux_nr_ordem   := nvl(aux_nr_ordem, 0) + 1;
@@ -133,7 +160,8 @@ create or replace package body k_nota_fiscal is
              vl_total,
              cd_ncm,
              cd_cest,
-             cd_unidade)
+             cd_unidade,
+             ds_produto)
       values(prm_cd_nota,
              aux_nr_ordem,
              prm_cd_produto,
@@ -142,7 +170,8 @@ create or replace package body k_nota_fiscal is
              aux_vl_total,
              aux_cd_ncm,
              aux_cd_cest,
-             aux_cd_unid)
+             aux_cd_unid,
+             aux_ds_prod)
       returning cd_nf_item
            into prm_cd_item;
                                                  
@@ -153,6 +182,60 @@ create or replace package body k_nota_fiscal is
     begin
       null;
     end p_calc_nf;
+    
+  
+  procedure p_buscar_dados_nota(prm_cd_nota            in  nota_fiscal.cd_nota%type,
+                                prm_nr_serie           out nota_fiscal.nr_serie%type,
+                                prm_nr_numero          out nota_fiscal.nr_numero%type,
+                                prm_dm_status          out nota_fiscal.dm_status%type,
+                                prm_dm_tipo_operacao   out nota_fiscal.dm_tipo_operacao%type,
+                                prm_dt_emissao         out nota_fiscal.dt_emissao%type,
+                                prm_dt_saida           out nota_fiscal.dt_saida%type,
+                                prm_ds_estab           out varchar2,
+                                prm_ds_cnpj_estab      out varchar2,
+                                prm_ds_pessoa          out varchar2,
+                                prm_ds_doc_pessoa      out varchar2,
+                                prm_ds_cfop            out varchar2,
+                                prm_ds_chave_acesso    out nota_fiscal.ds_chave_acesso%type,
+                                prm_ds_protocolo_autor out nota_fiscal.ds_protocolo_autor%type)
+    is
+    begin
+      select nf.nr_serie,
+             nf.nr_numero,
+             nf.dm_status,
+             nf.dm_tipo_operacao,
+             nf.dt_emissao,
+             nf.dt_saida,
+             nf.cd_estab || ' - ' || k_empresa.f_buscar_razao_social_estab(nf.cd_estab),
+             k_pessoa.f_buscar_doc(prm_cd_pessoa    => k_empresa.f_buscar_cd_pess_estab(nf.cd_estab),
+                                   prm_cd_documento => 'CNPJ',
+                                   prm_vf_mask      => true),
+             nf.cd_pessoa || ' - ' || k_pessoa.f_buscar_nome(nf.cd_pessoa),
+             k_pessoa.f_buscar_doc(prm_cd_pessoa    => nf.cd_pessoa,
+                                   prm_cd_documento => case k_pessoa.f_buscar_tipo(nf.cd_pessoa)
+                                                         when 'PF' then 'CPF'
+                                                         when 'PJ' then 'CNPJ'
+                                                       end,
+                                   prm_vf_mask      => true),
+             nf.cd_cfop || ' - ' || k_cfop.f_buscar_desc(nf.cd_cfop),
+             nf.ds_chave_acesso,
+             nf.ds_protocolo_autor
+        into prm_nr_serie,
+             prm_nr_numero,
+             prm_dm_status,
+             prm_dm_tipo_operacao,
+             prm_dt_emissao,
+             prm_dt_saida,
+             prm_ds_estab,
+             prm_ds_cnpj_estab,
+             prm_ds_pessoa,
+             prm_ds_doc_pessoa,
+             prm_ds_cfop,
+             prm_ds_chave_acesso,
+             prm_ds_protocolo_autor
+        from nota_fiscal nf
+       where nf.cd_nota = prm_cd_nota;
+    end p_buscar_dados_nota;
   
 end k_nota_fiscal;
 /
