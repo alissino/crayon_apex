@@ -357,6 +357,7 @@ is
                              prm_ds_conteudo   geracao_prcsso_arq.ds_conteudo%type,
                              prm_cd_seq        out geracao_prcsso_arq.nr_sequencia%type)
   is
+    aux_ds_conteudo geracao_prcsso_arq.ds_conteudo%type := prm_ds_conteudo;
   begin
     insert
       into geracao_prcsso_arq
@@ -373,6 +374,11 @@ is
            prm_ds_nome,
            prm_ds_conteudo)
     returning nr_sequencia into prm_cd_seq;
+    
+    if prm_ds_conteudo is not null and dbms_lob.istemporary(aux_ds_conteudo) = 1 then
+      dbms_lob.freetemporary(aux_ds_conteudo);
+    end if;
+    
   end;
   
   procedure p_salvar_arquivo(prm_cd_geracao geracao_prcsso_arq.nr_seq_prcsso%type,
@@ -562,38 +568,42 @@ is
       aux_cd_dir      varchar2(45);
     begin 
       select gpa.cd_dir_oracle,
-             gpa.ds_nome
+             gpa.ds_nome,
+             gpa.ds_conteudo
         into aux_cd_dir,
-             aux_ds_arquivo
+             aux_ds_arquivo,
+             aux_ds_conteudo
         from geracao_prcsso_arq gpa
        where gpa.nr_sequencia = prm_cd_arquivo;
-       
-      -- 1. identify the file on the physical server
-      aux_bfile := bfilename(aux_cd_dir, aux_ds_arquivo);
       
-      if dbms_lob.fileexists(aux_bfile) = 1 then
-        -- 2. open bfile and load it into a blob
-        dbms_lob.fileopen(aux_bfile, dbms_lob.file_readonly);
-        dbms_lob.createtemporary(aux_ds_conteudo, true);
-        dbms_lob.loadfromfile(aux_ds_conteudo, aux_bfile, dbms_lob.getlength(aux_bfile));
-        dbms_lob.fileclose(aux_bfile);
-
-        -- 3. set headers for download
-        sys.htp.init;
-        sys.owa_util.mime_header(aux_mime, false);
-        sys.htp.p('Content-length: ' || sys.dbms_lob.getlength(aux_ds_conteudo));
-        sys.htp.p('Content-Disposition: attachment; filename="' || aux_ds_arquivo || '"');
-        sys.owa_util.http_header_close;
-          
-        -- 4. download file
-        sys.wpg_docload.download_file(aux_ds_conteudo);
-          
-        -- 5. stop apex engine to prevent page rendering
-        apex_application.stop_apex_engine;
-      else
-        -- handle error: file not found
-        htp.p('File not found');
+      if aux_ds_conteudo is null then
+        -- 1. identify the file on the physical server
+        aux_bfile := bfilename(aux_cd_dir, aux_ds_arquivo);
+        
+        if dbms_lob.fileexists(aux_bfile) = 1 then
+          -- 2. open bfile and load it into a blob
+          dbms_lob.fileopen(aux_bfile, dbms_lob.file_readonly);
+          dbms_lob.createtemporary(aux_ds_conteudo, true);
+          dbms_lob.loadfromfile(aux_ds_conteudo, aux_bfile, dbms_lob.getlength(aux_bfile));
+          dbms_lob.fileclose(aux_bfile);
+        else
+          htp.p('File not found');
+          return;
+        end if;
       end if;
+      
+      sys.htp.init;
+      sys.owa_util.mime_header(aux_mime, false);
+      sys.htp.p('Content-length: ' || sys.dbms_lob.getlength(aux_ds_conteudo));
+      sys.htp.p('Content-Disposition: attachment; filename="' || aux_ds_arquivo || '"');
+      sys.owa_util.http_header_close;
+          
+      -- 4. download file
+      sys.wpg_docload.download_file(aux_ds_conteudo);
+          
+      -- 5. stop apex engine to prevent page rendering
+      apex_application.stop_apex_engine;
+      
     exception
       when others then
         raise;
