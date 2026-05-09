@@ -1,0 +1,39 @@
+declare
+  aux_existe     number;
+  aux_ds_program varchar2(45) := 'PRG_ASSINAR_XML';
+  aux_ds_path_sh varchar2(256) := '/opt/crayon/assinador_xml/assinar_xml.sh';
+
+begin
+  
+  select count(1)
+    into aux_existe
+    from all_scheduler_programs p
+   where p.owner = 'CRAYON'
+     and p.program_name = aux_ds_program;
+  
+  if nvl(aux_existe, 0) > 0 then
+    dbms_scheduler.drop_program(aux_ds_program);
+  end if;
+  
+  dbms_scheduler.create_program(program_name        => aux_ds_program,
+                                program_type        => 'EXECUTABLE',
+                                program_action      => aux_ds_path_sh,
+                                number_of_arguments => 2,
+                                enabled             => false,
+                                comments            => 'Assinar XML Python');
+  
+  dbms_scheduler.define_program_argument(program_name      => aux_ds_program,
+                                         argument_position => 1,
+                                         argument_name     => 'prm_xml',
+                                         argument_type     => 'VARCHAR2',
+                                         default_value     => null);
+  
+  dbms_scheduler.define_program_argument(program_name      => aux_ds_program,
+                                         argument_position => 2,
+                                         argument_name     => 'prm_cert',
+                                         argument_type     => 'VARCHAR2',
+                                         default_value     => null);
+  
+  dbms_scheduler.enable(aux_ds_program);
+  
+end;
