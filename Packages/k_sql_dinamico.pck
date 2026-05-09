@@ -1,0 +1,73 @@
+create or replace package k_sql_dinamico is
+  aux_ds_separador constant k_lista.typ_separador := '&';
+  aux_ds_igual     constant k_lista.typ_separador := '=';
+  
+  function f_buscar_val(prm_ds_sql varchar2,
+                        prm_ds_prm varchar2 default null)
+    return varchar2;
+
+end k_sql_dinamico;
+/
+create or replace package body k_sql_dinamico is
+
+  function f_buscar_val(prm_ds_sql varchar2,
+                        prm_ds_prm varchar2 default null)
+    return varchar2
+    is
+      aux_vt_param   k_lista.typ_lista := k_lista.typ_lista();
+      aux_cd_cursor  integer;
+      aux_qt_colunas integer;
+      aux_vt_colunas dbms_sql.desc_tab;
+      aux_ds_valor   varchar2(4000);
+      aux_dm_status  number;
+    begin
+      if prm_ds_prm is not null then
+        k_lista.p_criar_lista(prm_ds_string    => prm_ds_prm,
+                              prm_vt_lista     => aux_vt_param,
+                              prm_ds_separador => aux_ds_separador,
+                              prm_vf_trim      => false);
+      end if;
+      
+      aux_cd_cursor := dbms_sql.open_cursor;
+      
+      dbms_sql.parse(aux_cd_cursor, prm_ds_sql, dbms_sql.native);
+      
+      for prm in 1 .. aux_vt_param.count loop
+        begin
+          dbms_sql.bind_variable(aux_cd_cursor,
+                                 f_split_str(aux_vt_param(prm), 1, aux_ds_igual),
+                                 f_split_str(aux_vt_param(prm), 2, aux_ds_igual));
+        exception
+          when others then
+            null;
+        end;
+      end loop;
+      
+      dbms_sql.describe_columns(aux_cd_cursor, aux_qt_colunas, aux_vt_colunas);
+      
+      for col in 1 .. aux_qt_colunas loop
+        dbms_sql.define_column(aux_cd_cursor, col, aux_ds_valor, 4000);
+      end loop;
+      
+      aux_dm_status := dbms_sql.execute(aux_cd_cursor);
+      
+      if dbms_sql.fetch_rows(aux_cd_cursor) > 0 then
+        dbms_sql.column_value(aux_cd_cursor, 1, aux_ds_valor);
+      else
+        aux_ds_valor := null;
+      end if;
+      
+      dbms_sql.close_cursor(aux_cd_cursor);
+      
+      return aux_ds_valor;
+    exception
+      when others then
+        if dbms_sql.is_open(aux_cd_cursor) then
+          dbms_sql.close_cursor(aux_cd_cursor);
+        end if;
+        raise;
+      
+    end f_buscar_val;
+  
+end k_sql_dinamico;
+/
