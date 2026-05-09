@@ -242,6 +242,9 @@ create or replace package body k_pessoa is
           from pais p
          where p.cd_pais = aux_cd_pais;
         return aux_ds_retorno;
+      elsif prm_ds_opcao = 'CD_ESTADO' then
+        return aux_cd_estado;
+      
       end if;
       return null;
     end f_buscar_end;

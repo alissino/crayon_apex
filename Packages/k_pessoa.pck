@@ -236,14 +236,56 @@ create or replace package body k_pessoa is
       
       if prm_ds_opcao = 'CD_PAIS' then
         return aux_cd_pais;
+        
       elsif prm_ds_opcao = 'PAIS' then
         select p.ds_pais
           into aux_ds_retorno
           from pais p
          where p.cd_pais = aux_cd_pais;
         return aux_ds_retorno;
+        
       elsif prm_ds_opcao = 'CD_ESTADO' then
         return aux_cd_estado;
+        
+      elsif prm_ds_opcao = 'UF' then
+        select e.ds_sigla
+          into aux_ds_retorno
+          from estado e
+         where e.cd_estado = aux_cd_estado;
+        return aux_ds_retorno;
+        
+      elsif prm_ds_opcao = 'ESTADO' then
+        select e.ds_estado
+          into aux_ds_retorno
+          from estado e
+         where e.cd_estado = aux_cd_estado;
+        return aux_ds_retorno;
+     
+      elsif prm_ds_opcao = 'CD_CIDADE' then
+        return aux_cd_cidade;
+      
+      elsif prm_ds_opcao = 'CIDADE' then
+        select c.ds_cidade
+          into aux_ds_retorno
+          from cidade c
+         where c.cd_cidade = aux_cd_cidade;
+        return aux_ds_retorno;
+      
+      elsif prm_ds_opcao = 'CEP' then
+        return aux_nr_cep;
+      
+      elsif prm_ds_opcao = 'LOGRAD' then
+        return aux_ds_logradouro;
+      
+      elsif prm_ds_opcao = 'BAIRRO' then
+        return aux_ds_bairro;
+      
+      elsif prm_ds_opcao = 'NUM' then
+        return aux_ds_numero;
+      
+      elsif prm_ds_opcao = 'COMPL' then
+        return aux_ds_complemento;
+      
       
       end if;
       return null;
