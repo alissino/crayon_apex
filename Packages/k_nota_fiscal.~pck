@@ -39,7 +39,7 @@ create or replace package k_nota_fiscal is
                                  prm_vl_tot_pis    out number,
                                  prm_vl_tot_impos  out number);
                                  
-  
+  procedure p_gerar_processo_final(prm_cd_geracao geracao_prcsso.nr_sequencia%type);
 
 end k_nota_fiscal;
 /
@@ -179,15 +179,87 @@ create or replace package body k_nota_fiscal is
   procedure p_calc_icms_itm(prm_cd_item  in nota_fiscal_item.cd_nf_item%type,
                             prm_cd_regra in regra_fiscal.nr_sequencia%type)
     is
+      aux_dm_cst      nota_fiscal_item_icms.dm_cst_icms%type;
+      aux_vl_base     nota_fiscal_item_icms.vl_base_calc%type;
+      aux_vl_aliquota nota_fiscal_item_icms.vl_aliquota%type;
+      aux_vl_icms     nota_fiscal_item_icms.vl_icms%type;
     begin
-      null;
+      delete
+        from nota_fiscal_item_icms nfii
+       where nfii.cd_nf_item = prm_cd_item;
+       
+      select rf.dm_cst_icms,
+             rf.nr_aliquota_icms
+        into aux_dm_cst,
+             aux_vl_aliquota
+        from regra_fiscal rf
+       where rf.nr_sequencia = prm_cd_regra;
+       
+      select nfi.vl_total
+        into aux_vl_base
+        from nota_fiscal_item nfi
+       where nfi.cd_nf_item = prm_cd_item;
+       
+      -- Calc imposto
+      aux_vl_icms := aux_vl_base * (aux_vl_aliquota / 100);
+      
+      insert
+        into nota_fiscal_item_icms
+            (cd_nf_item,
+             dm_cst_icms,
+             vl_base_calc,
+             vl_aliquota,
+             vl_icms,
+             cd_regra_fiscal)
+      values(prm_cd_item,
+             aux_dm_cst,
+             aux_vl_base,
+             aux_vl_aliquota,
+             aux_vl_icms,
+             prm_cd_regra);
     end p_calc_icms_itm;
   
   procedure p_calc_pis_itm(prm_cd_item  in nota_fiscal_item.cd_nf_item%type,
                            prm_cd_regra in regra_fiscal.nr_sequencia%type)
     is
+      aux_dm_cst      nota_fiscal_item_pis.dm_cst_pis%type;
+      aux_vl_base     nota_fiscal_item_pis.vl_base_calc%type;
+      aux_vl_aliquota nota_fiscal_item_pis.vl_aliquota%type;
+      aux_vl_pis      nota_fiscal_item_pis.vl_pis%type;
     begin
-      null;
+      delete
+        from nota_fiscal_item_pis nfip
+       where nfip.cd_nf_item = prm_cd_item;
+       
+      select rf.dm_cst_cofins,
+             rf.nr_aliquota_cofins
+        into aux_dm_cst,
+             aux_vl_aliquota
+        from regra_fiscal rf
+       where rf.nr_sequencia = prm_cd_regra;
+       
+      select nfi.vl_total
+        into aux_vl_base
+        from nota_fiscal_item nfi
+       where nfi.cd_nf_item = prm_cd_item;
+       
+      -- Calc imposto
+      aux_vl_pis := aux_vl_base * (aux_vl_aliquota / 100);
+      
+      insert
+        into nota_fiscal_item_pis
+            (cd_nf_item,
+             dm_cst_pis,
+             vl_base_calc,
+             vl_aliquota,
+             vl_pis,
+             cd_regra_fiscal)
+      values(prm_cd_item,
+             aux_dm_cst,
+             aux_vl_base,
+             aux_vl_aliquota,
+             aux_vl_pis,
+             prm_cd_regra);
     end p_calc_pis_itm;
   
   procedure p_calc_cofins_itm(prm_cd_item  in nota_fiscal_item.cd_nf_item%type,
@@ -265,8 +337,21 @@ create or replace package body k_nota_fiscal is
   
   procedure p_calc_totais(prm_cd_nota nota_fiscal.cd_nota%type)
     is
+      aux_vl_tot_prod nota_fiscal.vl_produtos%type;
+      aux_vl_tot_nota nota_fiscal.vl_nota%type;
     begin
-      null;
+      select sum(nfi.vl_total)
+        into aux_vl_tot_prod
+        from nota_fiscal_item nfi
+       where nfi.cd_nota = prm_cd_nota;
+      
+      aux_vl_tot_nota := aux_vl_tot_prod;
+      
+      update nota_fiscal nf
+         set nf.vl_produtos = aux_vl_tot_prod,
+             nf.vl_nota     = aux_vl_tot_nota
+       where nf.cd_nota = prm_cd_nota;
+      
     end p_calc_totais;
   
   
@@ -299,13 +384,14 @@ create or replace package body k_nota_fiscal is
       aux_vl_nota     nota_fiscal.vl_nota%type     := 0;
       aux_ds_chave    nota_fiscal.ds_chave_acesso%type;
     begin
-      k_empresa.p_buscar_num_serie_nf(prm_cd_estab  => prm_cd_estab,
-                                      prm_nr_numero => aux_nr_numero,
-                                      prm_nr_serie  => aux_nr_serie);
-                                      
-      aux_dm_operacao := k_cfop.f_buscar_dm_operacao(prm_cd_cfop);
-      
       if prm_cd_nota is null then
+        k_empresa.p_buscar_num_serie_nf(prm_cd_estab  => prm_cd_estab,
+                                        prm_nr_numero => aux_nr_numero,
+                                        prm_nr_serie  => aux_nr_serie);
+                                        
+        aux_dm_operacao := k_cfop.f_buscar_dm_operacao(prm_cd_cfop);
+      
+      
         insert
           into nota_fiscal
               (cd_estab,
@@ -524,6 +610,59 @@ create or replace package body k_nota_fiscal is
       prm_vl_tot_impos := prm_vl_tot_icms + prm_vl_tot_cofins + prm_vl_tot_pis;
       
     end p_buscar_totais_nota;
+    
+  procedure p_gerar_processo_final(prm_cd_geracao geracao_prcsso.nr_sequencia%type)
+    is
+      aux_cd_nota nota_fiscal.cd_nota%type;
+      
+      aux_cd_prcsso_xml processo.cd_prcsso%type;
+      aux_cd_prcsso_rel processo.cd_prcsso%type;
+      
+      aux_cd_grc number;
+      aux_vf_err boolean;
+    begin
+      k_processo.p_buscar_prm(prm_cd_geracao, 1, aux_cd_nota);
+      
+      update nota_fiscal nf
+         set nf.cd_geracao_prcsso = prm_cd_geracao
+       where nf.cd_nota = aux_cd_nota;
+       
+      select x.cd_processo
+        into aux_cd_prcsso_xml
+        from xml                x,
+             nota_fiscal        nf,
+             nota_fiscal_modelo nfm
+       where x.cd_xml      = nfm.cd_xml
+         and nfm.cd_modelo = nf.cd_modelo_doc
+         and nf.cd_nota    = aux_cd_nota;
+      
+      select r.cd_processo
+        into aux_cd_prcsso_rel
+        from relatorio          r,
+             nota_fiscal        nf,
+             nota_fiscal_modelo nfm
+       where r.cd_relatorio(+) = nfm.cd_relatorio
+         and nfm.cd_modelo  = nf.cd_modelo_doc
+         and nf.cd_nota     = aux_cd_nota;
+      if aux_cd_prcsso_xml is not null then
+        p_gerar_processo_agr(prm_cd_prcsso     => aux_cd_prcsso_xml,
+                             prm_cd_prcsso_ori => prm_cd_geracao,
+                             prm_ds_params     => aux_cd_nota,
+                             prm_cd_geracao    => aux_cd_grc,
+                             prm_vf_erro       => aux_vf_err);
+      end if;
+      
+      if aux_cd_prcsso_rel is not null then
+        p_gerar_processo_agr(prm_cd_prcsso     => aux_cd_prcsso_rel,
+                             prm_cd_prcsso_ori => prm_cd_geracao,
+                             prm_ds_params     => aux_cd_nota,
+                             prm_cd_geracao    => aux_cd_grc,
+                             prm_vf_erro       => aux_vf_err);
+      end if;
+       
+      
+    
+    end p_gerar_processo_final;
   
 end k_nota_fiscal;
 /

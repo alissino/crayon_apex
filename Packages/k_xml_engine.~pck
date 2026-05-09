@@ -42,11 +42,7 @@ is
     is
       aux_nr_retorno number;
     begin
-      aux_nr_retorno := nvl(k_sql_dinamico.f_buscar_val(prm_ds_sql), 0);
-      if aux_nr_retorno > 0 then
-        return true;
-      end if;
-      return false;
+      return true;
     end f_valid_condicao;
   
   function f_buscar_atributos(prm_cd_node xml_node.cd_xml_node%type)
@@ -76,14 +72,10 @@ is
           null;
         
         elsif r_atrib.dm_origem = 'SQL' then
-          aux_ds_val := f_val(k_sql_dinamico.f_buscar_val(r_atrib.ds_expressao));
+          null;
         
         else
           p_mostra_erro('Valor inválido "xml_node_atributo.dm_origem": "'||r_atrib.dm_origem||'", verifique!');
-        end if;
-        
-        if aux_ds_val is not null then
-          aux_ds_atrib := aux_ds_atrib || ' ' || r_atrib.ds_atributo || '="' || aux_ds_val || '"';
         end if;
       
       end loop;

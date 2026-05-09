@@ -39,7 +39,7 @@ create or replace package k_nota_fiscal is
                                  prm_vl_tot_pis    out number,
                                  prm_vl_tot_impos  out number);
                                  
-  
+  procedure p_gerar_processo_final(prm_cd_geracao geracao_prcsso.nr_sequencia%type);
 
 end k_nota_fiscal;
 /
@@ -368,6 +368,10 @@ create or replace package body k_nota_fiscal is
        where nf.cd_nota = prm_cd_nota;
       return aux_cd_estab;
     end f_buscar_estab_nota;
+    
+  
+  
+  
 
   procedure p_incluir_nf(prm_cd_nota    in out nota_fiscal.cd_nota%type,
                          prm_cd_estab   in nota_fiscal.cd_estab%type,
@@ -384,13 +388,14 @@ create or replace package body k_nota_fiscal is
       aux_vl_nota     nota_fiscal.vl_nota%type     := 0;
       aux_ds_chave    nota_fiscal.ds_chave_acesso%type;
     begin
-      k_empresa.p_buscar_num_serie_nf(prm_cd_estab  => prm_cd_estab,
-                                      prm_nr_numero => aux_nr_numero,
-                                      prm_nr_serie  => aux_nr_serie);
-                                      
-      aux_dm_operacao := k_cfop.f_buscar_dm_operacao(prm_cd_cfop);
-      
       if prm_cd_nota is null then
+        k_empresa.p_buscar_num_serie_nf(prm_cd_estab  => prm_cd_estab,
+                                        prm_nr_numero => aux_nr_numero,
+                                        prm_nr_serie  => aux_nr_serie);
+                                        
+        aux_dm_operacao := k_cfop.f_buscar_dm_operacao(prm_cd_cfop);
+      
+      
         insert
           into nota_fiscal
               (cd_estab,
@@ -609,6 +614,59 @@ create or replace package body k_nota_fiscal is
       prm_vl_tot_impos := prm_vl_tot_icms + prm_vl_tot_cofins + prm_vl_tot_pis;
       
     end p_buscar_totais_nota;
+    
+  procedure p_gerar_processo_final(prm_cd_geracao geracao_prcsso.nr_sequencia%type)
+    is
+      aux_cd_nota nota_fiscal.cd_nota%type;
+      
+      aux_cd_prcsso_xml processo.cd_prcsso%type;
+      aux_cd_prcsso_rel processo.cd_prcsso%type;
+      
+      aux_cd_grc number;
+      aux_vf_err boolean;
+    begin
+      k_processo.p_buscar_prm(prm_cd_geracao, 1, aux_cd_nota);
+      
+      update nota_fiscal nf
+         set nf.cd_geracao_prcsso = prm_cd_geracao
+       where nf.cd_nota = aux_cd_nota;
+       
+      select x.cd_processo
+        into aux_cd_prcsso_xml
+        from xml                x,
+             nota_fiscal        nf,
+             nota_fiscal_modelo nfm
+       where x.cd_xml      = nfm.cd_xml
+         and nfm.cd_modelo = nf.cd_modelo_doc
+         and nf.cd_nota    = aux_cd_nota;
+      
+      select r.cd_processo
+        into aux_cd_prcsso_rel
+        from relatorio          r,
+             nota_fiscal        nf,
+             nota_fiscal_modelo nfm
+       where r.cd_relatorio(+) = nfm.cd_relatorio
+         and nfm.cd_modelo  = nf.cd_modelo_doc
+         and nf.cd_nota     = aux_cd_nota;
+      if aux_cd_prcsso_xml is not null then
+        p_gerar_processo_agr(prm_cd_prcsso     => aux_cd_prcsso_xml,
+                             prm_cd_prcsso_ori => prm_cd_geracao,
+                             prm_ds_params     => aux_cd_nota,
+                             prm_cd_geracao    => aux_cd_grc,
+                             prm_vf_erro       => aux_vf_err);
+      end if;
+      
+      if aux_cd_prcsso_rel is not null then
+        p_gerar_processo_agr(prm_cd_prcsso     => aux_cd_prcsso_rel,
+                             prm_cd_prcsso_ori => prm_cd_geracao,
+                             prm_ds_params     => aux_cd_nota,
+                             prm_cd_geracao    => aux_cd_grc,
+                             prm_vf_erro       => aux_vf_err);
+      end if;
+       
+      
+    
+    end p_gerar_processo_final;
   
 end k_nota_fiscal;
 /
