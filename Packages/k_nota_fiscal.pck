@@ -39,7 +39,24 @@ create or replace package k_nota_fiscal is
                                  prm_vl_tot_pis    out number,
                                  prm_vl_tot_impos  out number);
                                  
+  procedure p_buscar_totais_pag(prm_cd_nota     in  nota_fiscal.cd_nota%type,
+                                prm_vl_tot_nota out number,
+                                prm_vl_tot_pag  out number,
+                                prm_vl_troco    out number);
+                                
+  procedure p_buscar_valores_add_pag(prm_cd_nota     in  nota_fiscal.cd_nota%type,
+                                     prm_vl_nota     out number,
+                                     prm_vl_tot_pago out number,
+                                     prm_vl_saldo    out number);
+                                 
   procedure p_gerar_processo_final(prm_cd_geracao geracao_prcsso.nr_sequencia%type);
+  
+  
+  procedure p_salvar_pag(prm_sequencia    nota_fiscal_pagamento.nr_seq_nf_pag%type,
+                         prm_cd_nota      nota_fiscal.cd_nota%type,
+                         prm_nr_seq_forma forma_pagamento.nr_sequencia%type,
+                         prm_vl_pagamento nota_fiscal_pagamento.vl_pagamento%type,
+                         prm_qt_parcela   nota_fiscal_pagamento.nr_parcela%type);
 
 end k_nota_fiscal;
 /
@@ -614,7 +631,55 @@ create or replace package body k_nota_fiscal is
       prm_vl_tot_impos := prm_vl_tot_icms + prm_vl_tot_cofins + prm_vl_tot_pis;
       
     end p_buscar_totais_nota;
+  
+  procedure p_buscar_totais_pag(prm_cd_nota     in  nota_fiscal.cd_nota%type,
+                                prm_vl_tot_nota out number,
+                                prm_vl_tot_pag  out number,
+                                prm_vl_troco    out number)
+    is
+    begin
+      select v.vl_tot_nota
+        into prm_vl_tot_nota
+        from v_nota_fiscal_total v
+       where v.cd_nota = prm_cd_nota;
+      
+      select sum(nfp.vl_pagamento),
+             sum(nfp.vl_troco)
+        into prm_vl_tot_pag,
+             prm_vl_troco
+        from nota_fiscal_pagamento nfp
+       where nfp.cd_nota = prm_cd_nota;
+      
+      prm_vl_tot_pag := nvl(prm_vl_tot_pag, 0);
+      prm_vl_troco   := nvl(prm_vl_troco, 0);
+       
+    end p_buscar_totais_pag;
     
+  
+  procedure p_buscar_valores_add_pag(prm_cd_nota     in  nota_fiscal.cd_nota%type,
+                                     prm_vl_nota     out number,
+                                     prm_vl_tot_pago out number,
+                                     prm_vl_saldo    out number)
+    is
+    
+    begin
+      select v.vl_tot_nota
+        into prm_vl_nota
+        from v_nota_fiscal_total v
+       where v.cd_nota = prm_cd_nota;
+      
+      select sum(nvl(nfp.vl_pagamento, 0) - nvl(nfp.vl_troco, 0))
+        into prm_vl_tot_pago
+        from nota_fiscal_pagamento nfp
+       where nfp.cd_nota = prm_cd_nota;
+       
+      prm_vl_tot_pago := nvl(prm_vl_tot_pago, 0);
+      
+      prm_vl_saldo := prm_vl_nota - prm_vl_tot_pago;
+    
+    end p_buscar_valores_add_pag;
+  
+  
   procedure p_gerar_processo_final(prm_cd_geracao geracao_prcsso.nr_sequencia%type)
     is
       aux_cd_nota nota_fiscal.cd_nota%type;
