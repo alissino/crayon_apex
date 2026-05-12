@@ -667,6 +667,84 @@ create or replace package body k_nota_fiscal is
       
     
     end p_gerar_processo_final;
+    
+  
+  procedure p_salvar_pag(prm_sequencia    nota_fiscal_pagamento.nr_seq_nf_pag%type,
+                         prm_cd_nota      nota_fiscal.cd_nota%type,
+                         prm_nr_seq_forma forma_pagamento.nr_sequencia%type,
+                         prm_vl_pagamento nota_fiscal_pagamento.vl_pagamento%type,
+                         prm_qt_parcela   nota_fiscal_pagamento.nr_parcela%type)
+    is
+      aux_vl_parcela nota_fiscal_pagamento.vl_pagamento%type;
+      aux_vl_total   nota_fiscal_pagamento.vl_pagamento%type := 0;
+      aux_vl_nota    v_nota_fiscal_total.vl_tot_nota%type;
+      aux_vl_saldo   nota_fiscal_pagamento.vl_pagamento%type;
+      aux_vl_troco   nota_fiscal_pagamento.vl_troco%type;
+    begin
+      if prm_sequencia is null then
+        if k_forma_pagamento.f_parcela(prm_nr_seq_forma) then
+          for par in 1 .. prm_qt_parcela loop
+            if par < prm_qt_parcela then
+              aux_vl_parcela := prm_vl_pagamento / prm_qt_parcela;
+              aux_vl_total   := aux_vl_total + aux_vl_parcela;
+            else
+              aux_vl_parcela := prm_vl_pagamento - aux_vl_total;
+            end if;
+            
+            insert
+              into nota_fiscal_pagamento
+                  (nr_seq_nf_pag,
+                   cd_nota,
+                   nr_seq_forma_pag,
+                   vl_pagamento,
+                   nr_parcela,
+                   dt_vencimento)
+            values(s_nota_fiscal_pagamento.nextval,
+                   prm_cd_nota,
+                   prm_nr_seq_forma,
+                   aux_vl_parcela,
+                   par,
+                   null);
+            
+          end loop;
+        else
+          
+          if k_forma_pagamento.f_troco(prm_nr_seq_forma) then
+            select nvl(sum(nfp.vl_pagamento), 0) - nvl(sum(nfp.vl_troco), 0)
+              into aux_vl_saldo
+              from nota_fiscal_pagamento nfp
+             where nfp.cd_nota = prm_cd_nota;
+            
+            select v.vl_tot_nota
+              into aux_vl_nota
+              from v_nota_fiscal_total v
+             where v.cd_nota = prm_cd_nota;
+            
+            aux_vl_saldo := aux_vl_nota - aux_vl_saldo;
+            
+            aux_vl_troco := prm_vl_pagamento - aux_vl_saldo;
+          end if;  
+        
+          insert
+            into nota_fiscal_pagamento
+                (nr_seq_nf_pag,
+                 cd_nota,
+                 nr_seq_forma_pag,
+                 vl_pagamento,
+                 vl_troco)
+          values(s_nota_fiscal_pagamento.nextval,
+                 prm_cd_nota,
+                 prm_nr_seq_forma,
+                 prm_vl_pagamento,
+                 aux_vl_troco);
+        end if;
+      else
+        update nota_fiscal_pagamento nfp
+           set nfp.nr_seq_forma_pag = prm_nr_seq_forma,
+               nfp.vl_pagamento     = prm_vl_pagamento
+         where nfp.nr_seq_nf_pag = prm_sequencia;
+      end if;
+    end p_salvar_pag;
   
 end k_nota_fiscal;
 /

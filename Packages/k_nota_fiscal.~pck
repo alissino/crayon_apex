@@ -368,6 +368,10 @@ create or replace package body k_nota_fiscal is
        where nf.cd_nota = prm_cd_nota;
       return aux_cd_estab;
     end f_buscar_estab_nota;
+    
+  
+  
+  
 
   procedure p_incluir_nf(prm_cd_nota    in out nota_fiscal.cd_nota%type,
                          prm_cd_estab   in nota_fiscal.cd_estab%type,
